@@ -1,0 +1,20 @@
+{
+  "required": true,
+  "minVersion": "0.7",
+  "package": "dev.xhyrom.brigo.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "${mod_id}.refmap.json",
+  "mixins": [
+    "CommandHandlerMixin",
+    "PlayerListMixin"
+  ],
+  "client": [
+    "ChatTabCompleterMixin",
+    "GuiChatMixin",
+    "GuiTextFieldMixin",
+    "NetHandlerPlayClientMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

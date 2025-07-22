@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "id": "${mod_id}",
+  "version": "${version}",
+  "name": "Brigo",
+  "description": "...",
+  "authors": [
+    "xhyrom"
+  ],
+  "contact": {
+    "homepage": "https://modrinth.com/mod/brigo",
+    "sources": "https://github.com/xhyrom/brigo"
+  },
+  "license": "Apache-2.0",
+  "icon": "assets/${mod_id}/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "dev.xhyrom.brigo.BrigoClientOrnithe"
+    ]
+  },
+  "accessWidener": "brigo.aw",
+  "mixins": [
+    "brigo.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.19",
+    "minecraft": [
+      "1.12.2"
+    ]
+  }
+}

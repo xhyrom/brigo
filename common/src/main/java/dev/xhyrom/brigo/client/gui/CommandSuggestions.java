@@ -71,7 +71,7 @@ public class CommandSuggestions {
         this.fontRenderer = fontRenderer;
         this.config = config;
 
-        ((GuiTextFieldExtras) input).textFormatter(this::formatCommandText);
+        ((GuiTextFieldExtras) input).brigo$textFormatter(this::formatCommandText);
     }
 
     public static class CommandSuggestionsConfig {
@@ -134,7 +134,7 @@ public class CommandSuggestions {
                         .orElse(0);
 
                 int x = MathHelper.clamp(
-                        ((GuiTextFieldExtras) this.input).screenX(suggestions.getRange().getStart()),
+                        ((GuiTextFieldExtras) this.input).brigo$screenX(suggestions.getRange().getStart()),
                         0, this.screen.width - maxWidth
                 );
 
@@ -173,7 +173,7 @@ public class CommandSuggestions {
         }
 
         if (!this.keepSuggestions) {
-            ((GuiTextFieldExtras) this.input).suggestion(null);
+            ((GuiTextFieldExtras) this.input).brigo$suggestion(null);
             this.suggestions = null;
         }
 
@@ -197,11 +197,11 @@ public class CommandSuggestions {
 
     private void processCommandSuggestions(StringReader reader, int cursorPos) {
         CommandDispatcher<ISuggestionProvider> dispatcher =
-                ((NetHandlerPlayClientExtras) this.minecraft.player.connection).commands();
+                ((NetHandlerPlayClientExtras) this.minecraft.player.connection).brigo$commands();
 
         if (this.currentParse == null) {
             ISuggestionProvider provider =
-                    ((NetHandlerPlayClientExtras) this.minecraft.player.connection).suggestionsProvider();
+                    ((NetHandlerPlayClientExtras) this.minecraft.player.connection).brigo$suggestionsProvider();
             this.currentParse = dispatcher.parse(reader, provider);
         }
 
@@ -222,7 +222,7 @@ public class CommandSuggestions {
         int lastWordIndex = findLastWordIndex(textToCursor);
         Collection<String> playerNames =
                 ((NetHandlerPlayClientExtras) this.minecraft.player.connection)
-                        .suggestionsProvider().getPlayerNames();
+                        .brigo$suggestionsProvider().getPlayerNames();
 
         this.pendingSuggestions = ISuggestionProvider.suggest(
                 playerNames, new SuggestionsBuilder(textToCursor, lastWordIndex)
@@ -307,9 +307,9 @@ public class CommandSuggestions {
                 context.findSuggestionContext(this.input.getCursorPosition());
 
         CommandDispatcher<ISuggestionProvider> dispatcher =
-                ((NetHandlerPlayClientExtras) this.minecraft.player.connection).commands();
+                ((NetHandlerPlayClientExtras) this.minecraft.player.connection).brigo$commands();
         ISuggestionProvider provider =
-                ((NetHandlerPlayClientExtras) this.minecraft.player.connection).suggestionsProvider();
+                ((NetHandlerPlayClientExtras) this.minecraft.player.connection).brigo$suggestionsProvider();
 
         Map<CommandNode<ISuggestionProvider>, String> usageMap =
                 dispatcher.getSmartUsage(suggestionContext.parent, provider);
@@ -328,7 +328,7 @@ public class CommandSuggestions {
         if (!usageList.isEmpty()) {
             this.commandUsage.addAll(usageList);
             this.commandUsagePosition = MathHelper.clamp(
-                    ((GuiTextFieldExtras) this.input).screenX(suggestionContext.startPos),
+                    ((GuiTextFieldExtras) this.input).brigo$screenX(suggestionContext.startPos),
                     0, this.screen.width - maxWidth
             );
             this.commandUsageWidth = maxWidth;
@@ -546,14 +546,15 @@ public class CommandSuggestions {
                     Mouse.getY() * resolution.getScaledHeight() / minecraft.displayHeight - 1;
 
             if (bounds.contains(mouseX, mouseY)) {
-                int newOffset = MathHelper.clamp(
+                this.scrollOffset = MathHelper.clamp(
                         (int) (this.scrollOffset - delta),
                         0,
                         Math.max(this.suggestions.size() - config.suggestionLineLimit, 0)
                 );
-                this.scrollOffset = newOffset;
+
                 return true;
             }
+
             return false;
         }
 
@@ -610,7 +611,7 @@ public class CommandSuggestions {
 
             Suggestion suggestion = this.suggestions.get(this.selectedIndex);
             String suffix = calculateSuggestionSuffix(input.getText(), suggestion.apply(this.originalText));
-            ((GuiTextFieldExtras) input).suggestion(suffix);
+            ((GuiTextFieldExtras) input).brigo$suggestion(suffix);
         }
 
         public void applySuggestion() {

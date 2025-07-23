@@ -1,4 +1,4 @@
-package dev.xhyrom.brigo.mixin;
+package dev.xhyrom.brigo.mixin.client;
 
 import com.google.common.base.Predicate;
 import dev.xhyrom.brigo.accessor.GuiTextFieldExtras;
@@ -140,19 +140,19 @@ public abstract class GuiTextFieldMixin implements GuiTextFieldExtras {
 
     @Unique
     @Override
-    public void suggestion(@Nullable String suggestion) {
+    public void brigo$suggestion(@Nullable String suggestion) {
         this.brigo$currentSuggestion = suggestion;
     }
 
     @Unique
     @Override
-    public void textFormatter(BiFunction<String, Integer, String> formatter) {
+    public void brigo$textFormatter(BiFunction<String, Integer, String> formatter) {
         this.brigo$textFormatter = formatter;
     }
 
     @Unique
     @Override
-    public int screenX(int position) {
+    public int brigo$screenX(int position) {
         return position > this.text.length() ?
                 this.x :
                 this.x + fontRenderer.getStringWidth(this.text.substring(0, position));

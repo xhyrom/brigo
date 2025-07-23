@@ -1,4 +1,4 @@
-package dev.xhyrom.brigo.command.synchronization;
+package dev.xhyrom.brigo.command.serialization;
 
 import com.mojang.brigadier.arguments.ArgumentType;
 import net.minecraft.network.PacketBuffer;

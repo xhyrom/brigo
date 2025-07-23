@@ -1,4 +1,4 @@
-package dev.xhyrom.brigo.mixin;
+package dev.xhyrom.brigo.mixin.client;
 
 import dev.xhyrom.brigo.client.gui.CommandSuggestions;
 import net.minecraft.client.Minecraft;

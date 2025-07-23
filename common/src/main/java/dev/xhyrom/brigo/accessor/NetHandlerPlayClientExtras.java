@@ -6,6 +6,6 @@ import dev.xhyrom.brigo.client.ISuggestionProvider;
 import org.jetbrains.annotations.NotNull;
 
 public interface NetHandlerPlayClientExtras {
-    ClientSuggestionProvider suggestionsProvider();
-    @NotNull CommandDispatcher<ISuggestionProvider> commands();
+    ClientSuggestionProvider brigo$suggestionsProvider();
+    @NotNull CommandDispatcher<ISuggestionProvider> brigo$commands();
 }

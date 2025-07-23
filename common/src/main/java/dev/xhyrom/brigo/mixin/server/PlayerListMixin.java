@@ -1,4 +1,4 @@
-package dev.xhyrom.brigo.mixin;
+package dev.xhyrom.brigo.mixin.server;
 
 import dev.xhyrom.brigo.accessor.CommandHandlerExtras;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -17,6 +17,6 @@ public abstract class PlayerListMixin {
 
     @Inject(method = "sendPlayerPermissionLevel", at = @At("HEAD"))
     public void sendPlayerPermissionLevel(EntityPlayerMP player, int permLevel, CallbackInfo ci) {
-        ((CommandHandlerExtras) this.server.getCommandManager()).sendCommands(player);
+        ((CommandHandlerExtras) this.server.getCommandManager()).brigo$sendCommands(player);
     }
 }

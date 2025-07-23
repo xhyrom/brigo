@@ -1,4 +1,4 @@
-package dev.xhyrom.brigo.mixin;
+package dev.xhyrom.brigo.mixin.client;
 
 import net.minecraft.client.gui.GuiChat;
 import org.spongepowered.asm.mixin.Mixin;

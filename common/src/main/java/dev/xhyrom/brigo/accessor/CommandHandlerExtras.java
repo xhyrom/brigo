@@ -6,6 +6,6 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import org.jetbrains.annotations.NotNull;
 
 public interface CommandHandlerExtras {
-    void sendCommands(@NotNull EntityPlayerMP player);
-    CommandDispatcher<CommandSource> dispatcher();
+    void brigo$sendCommands(@NotNull EntityPlayerMP player);
+    CommandDispatcher<CommandSource> brigo$dispatcher();
 }

@@ -1,6 +1,6 @@
 package dev.xhyrom.brigo;
 
-import dev.xhyrom.brigo.command.synchronization.ArgumentTypes;
+import dev.xhyrom.brigo.command.serialization.ArgumentTypes;
 import org.tinylog.Logger;
 import org.tinylog.TaggedLogger;
 

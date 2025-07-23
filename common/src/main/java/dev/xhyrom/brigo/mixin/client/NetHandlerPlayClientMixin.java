@@ -1,4 +1,4 @@
-package dev.xhyrom.brigo.mixin;
+package dev.xhyrom.brigo.mixin.client;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
@@ -10,7 +10,7 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import dev.xhyrom.brigo.accessor.NetHandlerPlayClientExtras;
 import dev.xhyrom.brigo.client.ClientSuggestionProvider;
 import dev.xhyrom.brigo.client.ISuggestionProvider;
-import dev.xhyrom.brigo.command.CommandsPacket;
+import dev.xhyrom.brigo.client.network.CommandsPacket;
 import dev.xhyrom.brigo.util.SuggestionProviders;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.network.NetHandlerPlayClient;
@@ -78,7 +78,7 @@ public class NetHandlerPlayClientMixin implements NetHandlerPlayClientExtras {
         if (!this.brigo$commands.getRoot().getChildren().isEmpty() || brigo$entityStatusReceived) return;
 
         brigo$entityStatusReceived = true;
-        suggestionsProvider().getSuggestionsFromServer().thenAccept(commands -> {
+        brigo$suggestionsProvider().getSuggestionsFromServer().thenAccept(commands -> {
             for (Suggestion suggestion : commands.getList()) {
                 brigo$commands.register(
                         LiteralArgumentBuilder.<ISuggestionProvider>literal(suggestion.getText().substring(1))
@@ -93,13 +93,13 @@ public class NetHandlerPlayClientMixin implements NetHandlerPlayClientExtras {
 
     @Unique
     @Override
-    public ClientSuggestionProvider suggestionsProvider() {
+    public ClientSuggestionProvider brigo$suggestionsProvider() {
         return brigo$suggestionsProvider;
     }
 
     @Unique
     @Override
-    public @NotNull CommandDispatcher<ISuggestionProvider> commands() {
+    public @NotNull CommandDispatcher<ISuggestionProvider> brigo$commands() {
         return brigo$commands;
     }
 }

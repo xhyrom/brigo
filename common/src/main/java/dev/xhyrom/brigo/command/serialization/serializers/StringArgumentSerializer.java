@@ -1,8 +1,8 @@
-package dev.xhyrom.brigo.command.synchronization.brigadier;
+package dev.xhyrom.brigo.command.serialization.serializers;
 
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType.StringType;
-import dev.xhyrom.brigo.command.synchronization.ArgumentSerializer;
+import dev.xhyrom.brigo.command.serialization.ArgumentSerializer;
 import net.minecraft.network.PacketBuffer;
 
 public class StringArgumentSerializer implements ArgumentSerializer<StringArgumentType> {

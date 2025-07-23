@@ -5,14 +5,14 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "${mod_id}.refmap.json",
   "mixins": [
-    "CommandHandlerMixin",
-    "PlayerListMixin"
+    "server.CommandHandlerMixin",
+    "server.PlayerListMixin"
   ],
   "client": [
-    "ChatTabCompleterMixin",
-    "GuiChatMixin",
-    "GuiTextFieldMixin",
-    "NetHandlerPlayClientMixin"
+    "client.ChatTabCompleterMixin",
+    "client.GuiChatMixin",
+    "client.GuiTextFieldMixin",
+    "client.NetHandlerPlayClientMixin"
   ],
   "injectors": {
     "defaultRequire": 1

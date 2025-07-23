@@ -37,14 +37,6 @@ public class ClientSuggestionProvider implements ISuggestionProvider {
         return list;
     }
 
-    public Collection<ResourceLocation> getSoundResourceLocations() {
-        return this.mc.getSoundHandler().soundRegistry.getKeys();
-    }
-
-    public Collection<ResourceLocation> getRecipeResourceLocations() {
-        return CraftingManager.REGISTRY.getKeys();
-    }
-
     public CompletableFuture<Suggestions> getSuggestionsFromServer(CommandContext<ISuggestionProvider> context, SuggestionsBuilder suggestionsBuilder) {
         if (this.pendingSuggestionsFuture != null) {
             this.pendingSuggestionsFuture.cancel(false);

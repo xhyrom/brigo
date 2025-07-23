@@ -1,9 +1,9 @@
-package dev.xhyrom.brigo.command.synchronization;
+package dev.xhyrom.brigo.command.serialization;
 
 import com.google.common.collect.Maps;
 import com.mojang.brigadier.arguments.ArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import dev.xhyrom.brigo.command.synchronization.brigadier.StringArgumentSerializer;
+import dev.xhyrom.brigo.command.serialization.serializers.StringArgumentSerializer;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
 import org.jetbrains.annotations.Nullable;

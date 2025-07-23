@@ -50,10 +50,6 @@ public class NetHandlerPlayClientMixin implements NetHandlerPlayClientExtras {
         String command = ClientSuggestionProvider.command;
         String[] matches = packetIn.getMatches();
 
-        System.out.println("Received tab complete: " + matches.length + " matches");
-        System.out.println("Command: " + command);
-        System.out.println("Matches: " + String.join(", ", matches));
-
         int lastSpace = command.lastIndexOf(' ');
         int replaceStart = (lastSpace == -1) ? 0 : lastSpace + 1;
         int replaceEnd = command.length();

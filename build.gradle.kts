@@ -64,6 +64,10 @@ subprojects {
                 }
             }
 
+            from("${project.rootDir}/LICENSE") {
+                into("")
+            }
+
             relocate("org.tinylog", "dev.xhyrom.brigo.shadow.tinylog")
             relocate("com.mojang.brigadier", "dev.xhyrom.brigo.shadow.brigadier")
 

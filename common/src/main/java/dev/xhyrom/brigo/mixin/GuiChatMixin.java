@@ -3,6 +3,7 @@ package dev.xhyrom.brigo.mixin;
 import dev.xhyrom.brigo.client.gui.CommandSuggestions;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.*;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -40,25 +41,9 @@ public class GuiChatMixin extends GuiScreen {
         this.brigo$commandSuggestions.updateCommandInfo();
     }
 
-    @Inject(method = "keyTyped", at = @At("HEAD"), cancellable = true)
-    private void keyTyped(char typedChar, int keyCode, CallbackInfo ci) {
-        if (this.brigo$commandSuggestions.keyPressed(typedChar, keyCode, 0)) {
-            ci.cancel();
-        }
-    }
-
     @Inject(method = "handleMouseInput", at = @At("HEAD"))
     private void handleMouseInput(CallbackInfo ci) {
-        int scroll = Mouse.getEventDWheel();
-        if (scroll == 0) return;
-
-        ScaledResolution scaled = new ScaledResolution(mc); // TODO: cache
-        double mouseX = Mouse.getEventX() * scaled.getScaledWidth() / mc.displayWidth;
-        double mouseY = scaled.getScaledHeight() - Mouse.getEventY() * scaled.getScaledHeight() / mc.displayHeight - 1;
-
-
-        System.out.println("Mouse scrolled at: " + mouseX + ", " + mouseY);
-        this.brigo$commandSuggestions.mouseScrolled(mouseY);
+        this.brigo$commandSuggestions.mouseScrolled(Mouse.getEventDWheel());
     }
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)
@@ -83,6 +68,16 @@ public class GuiChatMixin extends GuiScreen {
     @Inject(method = "drawScreen", at = @At("TAIL"))
     private void drawScreen(int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
         this.brigo$commandSuggestions.render(mouseX, mouseY);
+    }
+
+    @Override
+    public void handleKeyboardInput() {
+        if (Keyboard.getEventKeyState() && this.brigo$commandSuggestions.keyPressed(Keyboard.getEventKey())) {
+            this.mc.dispatchKeypresses();
+            return;
+        }
+
+        super.handleKeyboardInput();
     }
 
     @Override

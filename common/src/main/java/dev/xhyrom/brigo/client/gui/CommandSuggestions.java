@@ -15,7 +15,6 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import com.mojang.realmsclient.gui.ChatFormatting;
 import dev.xhyrom.brigo.accessor.GuiTextFieldExtras;
 import dev.xhyrom.brigo.accessor.NetHandlerPlayClientExtras;
 import dev.xhyrom.brigo.client.ISuggestionProvider;
@@ -27,9 +26,10 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
-import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 
 import java.util.Collection;
 import java.util.List;
@@ -95,13 +95,13 @@ public class CommandSuggestions {
         }
     }
 
-    public boolean keyPressed(int pKeyCode, int pScanCode, int pModifiers)
+    public boolean keyPressed(int pKeyCode)
     {
-        if (this.suggestions != null && this.suggestions.keyPressed(pKeyCode, pScanCode, pModifiers))
+        if (this.suggestions != null && this.suggestions.keyPressed(pKeyCode))
         {
             return true;
         }
-        else if (pKeyCode == 258)
+        else if (pKeyCode == Keyboard.KEY_TAB)
         {
             this.showSuggestions(true);
             return true;
@@ -530,9 +530,9 @@ public class CommandSuggestions {
 
         public boolean mouseScrolled(double pDelta)
         {
-            ScaledResolution scaledResolution = new ScaledResolution(minecraft); // TODO: cache
-            int i = (int)(CommandSuggestions.this.minecraft.mouseHelper.deltaX * scaledResolution.getScaledWidth() / (double)CommandSuggestions.this.minecraft.displayWidth);
-            int j = (int)(CommandSuggestions.this.minecraft.mouseHelper.deltaY * scaledResolution.getScaledHeight() / (double)CommandSuggestions.this.minecraft.displayHeight);
+            ScaledResolution scaledResolution = new ScaledResolution(minecraft);
+            int i = Mouse.getX() * scaledResolution.getScaledWidth() / minecraft.displayWidth;
+            int j = scaledResolution.getScaledHeight() - Mouse.getY() * scaledResolution.getScaledHeight() / minecraft.displayHeight - 1;
 
             if (this.rect.contains(i, j))
             {
@@ -545,21 +545,21 @@ public class CommandSuggestions {
             }
         }
 
-        public boolean keyPressed(int pKeyCode, int pScanCode, int pModifiers)
+        public boolean keyPressed(int pKeyCode)
         {
-            if (pKeyCode == 265)
+            if (pKeyCode == Keyboard.KEY_UP)
             {
                 this.cycle(-1);
                 this.tabCycles = false;
                 return true;
             }
-            else if (pKeyCode == 264)
+            else if (pKeyCode == Keyboard.KEY_DOWN)
             {
                 this.cycle(1);
                 this.tabCycles = false;
                 return true;
             }
-            else if (pKeyCode == 258)
+            else if (pKeyCode == Keyboard.KEY_TAB)
             {
                 if (this.tabCycles)
                 {
@@ -569,7 +569,7 @@ public class CommandSuggestions {
                 this.useSuggestion();
                 return true;
             }
-            else if (pKeyCode == 256)
+            else if (pKeyCode == Keyboard.KEY_ESCAPE)
             {
                 this.hide();
                 return true;

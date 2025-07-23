@@ -32,11 +32,11 @@ public class GuiChatMixin extends GuiScreen {
             @Override
             public void setEntryValue(int id, String value) {
                 String s = inputField.getText();
-
                 brigo$commandSuggestions.setAllowSuggestions(!s.equals(defaultInputFieldText));
                 brigo$commandSuggestions.updateCommandInfo();
             }
         });
+
         this.brigo$commandSuggestions = new CommandSuggestions(this.mc, this, this.inputField, this.fontRenderer, false, false, 1, 10, true, -805306368);
         this.brigo$commandSuggestions.updateCommandInfo();
     }

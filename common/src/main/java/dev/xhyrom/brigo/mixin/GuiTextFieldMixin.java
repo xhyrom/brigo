@@ -1,8 +1,10 @@
 package dev.xhyrom.brigo.mixin;
 
+import com.google.common.base.Predicate;
 import dev.xhyrom.brigo.accessor.GuiTextFieldExtras;
 import net.minecraft.client.gui.FontRenderer;
 import net.minecraft.client.gui.Gui;
+import net.minecraft.client.gui.GuiPageButtonList;
 import net.minecraft.client.gui.GuiTextField;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -12,8 +14,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
-
 import java.util.function.BiFunction;
 
 @Mixin(GuiTextField.class)
@@ -49,10 +49,23 @@ public abstract class GuiTextFieldMixin implements GuiTextFieldExtras {
 
     @Shadow protected abstract void drawSelectionBox(int startX, int startY, int endX, int endY);
 
+    @Shadow private Predicate<String> validator;
+    @Shadow private GuiPageButtonList.GuiResponder guiResponder;
+    @Shadow @Final private int id;
+
+    @Shadow public abstract void setResponderEntryValue(int idIn, String textIn);
+
     @Unique
-    private String suggestion;
+    private String brigo$suggestion;
     @Unique
-    private BiFunction<String, Integer, String> textFormatter = (string, integer) -> string;
+    private BiFunction<String, Integer, String> brigo$textFormatter = (string, integer) -> string;
+
+    @Inject(method = "setText", at = @At("TAIL"))
+    private void setText(String textIn, CallbackInfo ci) {
+        if (this.validator.apply(textIn)) {
+            this.setResponderEntryValue(this.id, textIn);
+        }
+    }
 
     @Inject(method = "drawTextBox", at = @At("HEAD"), cancellable = true)
     private void drawTextBox(CallbackInfo ci) {
@@ -77,7 +90,7 @@ public abstract class GuiTextFieldMixin implements GuiTextFieldExtras {
 
             if (!string.isEmpty()) {
                 String string2 = bl ? string.substring(0, j) : string;
-                n = this.fontRenderer.drawStringWithShadow(this.textFormatter.apply(string2, this.cursorPosition), (float)l, (float)m, i);
+                n = this.fontRenderer.drawStringWithShadow(this.brigo$textFormatter.apply(string2, this.cursorPosition), (float)l, (float)m, i);
             }
 
             boolean bl3 = this.cursorPosition < this.text.length() || this.text.length() >= this.getMaxStringLength();
@@ -90,12 +103,12 @@ public abstract class GuiTextFieldMixin implements GuiTextFieldExtras {
             }
 
             if (!string.isEmpty() && bl && j < string.length()) {
-                n = this.fontRenderer.drawStringWithShadow(this.textFormatter.apply(string.substring(j), this.cursorPosition), (float)n, (float)m, i);
+                n = this.fontRenderer.drawStringWithShadow(this.brigo$textFormatter.apply(string.substring(j), this.cursorPosition), (float)n, (float)m, i);
             }
 
-            if (!bl3 && this.suggestion != null)
+            if (!bl3 && this.brigo$suggestion != null)
             {
-                this.fontRenderer.drawStringWithShadow(this.suggestion, (float)(o - 1), (float)m, -8355712);
+                this.fontRenderer.drawStringWithShadow(this.brigo$suggestion, (float)(o - 1), (float)m, -8355712);
             }
 
             if (bl2) {
@@ -118,13 +131,13 @@ public abstract class GuiTextFieldMixin implements GuiTextFieldExtras {
     @Unique
     @Override
     public void suggestion(@Nullable String string) {
-        this.suggestion = string;
+        this.brigo$suggestion = string;
     }
 
     @Unique
     @Override
     public void textFormatter(BiFunction<String, Integer, String> formatter) {
-        this.textFormatter = formatter;
+        this.brigo$textFormatter = formatter;
     }
 
     @Unique

@@ -2,6 +2,7 @@ package dev.xhyrom.brigo.mixin;
 
 import com.google.common.collect.Maps;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
@@ -32,7 +33,16 @@ public class CommandHandlerMixin implements CommandHandlerExtras {
     @Inject(method = "registerCommand", at = @At("HEAD"))
     private void registerCommand(ICommand command, CallbackInfoReturnable<ICommand> cir) {
         System.out.println("Registering command: " + command.getName());
-        brigo$dispatcher.register(LiteralArgumentBuilder.literal(command.getName()));
+        brigo$dispatcher.register(
+                LiteralArgumentBuilder.<CommandSource>literal(command.getName())
+                    .then(
+                            RequiredArgumentBuilder.<CommandSource, String>argument("params", StringArgumentType.greedyString())
+                                    .suggests((ctx, suggestions) -> {
+                                        System.out.println("Suggesting for command: " + command.getName());
+                                        return suggestions.buildFuture();
+                                    })
+                    )
+        );
     }
 
     @Unique

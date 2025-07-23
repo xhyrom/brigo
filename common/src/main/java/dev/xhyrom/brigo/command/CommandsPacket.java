@@ -12,6 +12,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
 import dev.xhyrom.brigo.BrigoClient;
 import dev.xhyrom.brigo.client.ISuggestionProvider;
+import dev.xhyrom.brigo.command.synchronization.ArgumentTypes;
 import dev.xhyrom.brigo.util.SuggestionProviders;
 import io.netty.buffer.Unpooled;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -155,7 +156,7 @@ public class CommandsPacket {
         if (i == 2)
         {
             String s = pBuffer.readString(32767);
-            ArgumentType<?> argumenttype = null;//ArgumentTypes.deserialize(pBuffer);
+            ArgumentType<?> argumenttype = ArgumentTypes.deserialize(pBuffer);
 
             if (argumenttype == null)
             {
@@ -234,7 +235,7 @@ public class CommandsPacket {
         {
             ArgumentCommandNode < ISuggestionProvider, ? > argumentcommandnode = (ArgumentCommandNode)pNode;
             pBuffer.writeString(argumentcommandnode.getName());
-            //ArgumentTypes.serialize(pBuffer, argumentcommandnode.getType());
+            ArgumentTypes.serialize(pBuffer, argumentcommandnode.getType());
 
             if (argumentcommandnode.getCustomSuggestions() != null)
             {

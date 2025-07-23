@@ -3,7 +3,7 @@
   "id": "${mod_id}",
   "version": "${version}",
   "name": "Brigo",
-  "description": "...",
+  "description": "Brings modern Brigadier-style command suggestions and autocomplete to legacy Minecraft versions.",
   "authors": [
     "xhyrom"
   ],

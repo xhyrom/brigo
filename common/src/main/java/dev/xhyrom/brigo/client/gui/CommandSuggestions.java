@@ -28,6 +28,7 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import org.jetbrains.annotations.Nullable;
+import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -179,7 +180,7 @@ public class CommandSuggestions {
 
         if (!this.keepSuggestions)
         {
-            ((GuiTextFieldExtras) this.input).suggestion((String)null);
+            ((GuiTextFieldExtras) this.input).suggestion(null);
             this.suggestions = null;
         }
 

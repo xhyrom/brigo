@@ -7,6 +7,7 @@ import dev.xhyrom.brigo.client.ISuggestionProvider;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.util.ResourceLocation;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
@@ -24,12 +25,12 @@ public class CommandSource implements ISuggestionProvider {
 
     @Override
     public Collection<String> getPlayerNames() {
-        return Collections.emptyList();
+        return Arrays.asList(this.sender.getServer().getOnlinePlayerNames());
     }
 
     @Override
     public Collection<String> getTeamNames() {
-        return Collections.emptyList();
+        return this.sender.getServer().getWorld(0).getScoreboard().getTeamNames();
     }
 
     @Override
@@ -54,6 +55,6 @@ public class CommandSource implements ISuggestionProvider {
 
     @Override
     public boolean hasPermissionLevel(int i) {
-        return false;
+        return this.sender.canUseCommand(i, "");
     }
 }

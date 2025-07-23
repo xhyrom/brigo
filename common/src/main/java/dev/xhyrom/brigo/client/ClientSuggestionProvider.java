@@ -19,12 +19,14 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.RayTraceResult.Type;
+import org.jetbrains.annotations.Nullable;
 
 public class ClientSuggestionProvider implements ISuggestionProvider {
     private final NetHandlerPlayClient connection;
     private final Minecraft mc;
-    private int pendingSuggestionsId = -1;
-    private CompletableFuture<Suggestions> pendingSuggestionsFuture;
+    private @Nullable CompletableFuture<Suggestions> pendingSuggestionsFuture;
+
+    public static String command;
 
     public ClientSuggestionProvider(NetHandlerPlayClient connection, Minecraft mc) {
         this.connection = connection;
@@ -56,7 +58,7 @@ public class ClientSuggestionProvider implements ISuggestionProvider {
     }
 
     public Collection<ResourceLocation> getRecipeResourceLocations() {
-        return CraftingManager.REGISTRY.getKeys(); //this.connection.getRecipeManager().getIds();
+        return CraftingManager.REGISTRY.getKeys();
     }
 
     public boolean hasPermissionLevel(int i) {
@@ -70,8 +72,10 @@ public class ClientSuggestionProvider implements ISuggestionProvider {
         }
 
         this.pendingSuggestionsFuture = new CompletableFuture<>();
-        int i = ++this.pendingSuggestionsId;
+
+        command = context.getInput();
         this.connection.sendPacket(new CPacketTabComplete(context.getInput(), null, false));
+
         return this.pendingSuggestionsFuture;
     }
 
@@ -97,13 +101,11 @@ public class ClientSuggestionProvider implements ISuggestionProvider {
         }
     }
 
-    public void completeCustomSuggestions(int i, Suggestions suggestions) {
-        if (i == this.pendingSuggestionsId) {
-            this.pendingSuggestionsFuture.complete(suggestions);
-            this.pendingSuggestionsFuture = null;
-            this.pendingSuggestionsId = -1;
-        }
+    public void completeCustomSuggestions(Suggestions suggestions) {
+        if (this.pendingSuggestionsFuture == null) return;
 
+        this.pendingSuggestionsFuture.complete(suggestions);
+        this.pendingSuggestionsFuture = null;
     }
 }
 

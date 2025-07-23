@@ -1,14 +1,18 @@
 package dev.xhyrom.brigo.mixin;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.ParseResults;
+import com.mojang.brigadier.StringReader;
 import com.mojang.brigadier.context.StringRange;
 import com.mojang.brigadier.suggestion.Suggestion;
 import com.mojang.brigadier.suggestion.Suggestions;
 import dev.xhyrom.brigo.accessor.NetHandlerPlayClientExtras;
 import dev.xhyrom.brigo.client.ClientSuggestionProvider;
 import dev.xhyrom.brigo.client.ISuggestionProvider;
+import dev.xhyrom.brigo.command.CommandSource;
 import dev.xhyrom.brigo.command.CommandsPacket;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiChat;
 import net.minecraft.client.network.NetHandlerPlayClient;
 import net.minecraft.network.play.server.SPacketCustomPayload;
 import net.minecraft.network.play.server.SPacketTabComplete;
@@ -41,10 +45,10 @@ public class NetHandlerPlayClientMixin implements NetHandlerPlayClientExtras {
     private void handleTabComplete(SPacketTabComplete packetIn, CallbackInfo ci) {
         String[] strings = packetIn.getMatches();
         List<Suggestion> suggestions = Arrays.stream(strings)
-                .map(str -> new Suggestion(StringRange.at(0), str))
+                .map(str -> new Suggestion(StringRange.at(ClientSuggestionProvider.command.length()), str))
                 .collect(Collectors.toList());
 
-        this.suggestionsProvider.completeCustomSuggestions(0, new Suggestions(StringRange.at(0), suggestions));
+        this.suggestionsProvider.completeCustomSuggestions(new Suggestions(StringRange.at(ClientSuggestionProvider.command.length()), suggestions));
     }
 
     @Inject(method = "handleCustomPayload", at = @At("TAIL"))

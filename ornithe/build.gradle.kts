@@ -20,7 +20,6 @@ unimined.minecraft {
 
     ornitheFabric {
         loader(loaderVersion)
-        accessWidener(project(":common").file("src/main/resources/${modId}.aw"))
     }
 
     mappings {

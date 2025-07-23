@@ -19,7 +19,6 @@
       "dev.xhyrom.brigo.BrigoClientOrnithe"
     ]
   },
-  "accessWidener": "brigo.aw",
   "mixins": [
     "brigo.mixins.json"
   ],

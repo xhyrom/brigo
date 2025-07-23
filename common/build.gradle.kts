@@ -15,10 +15,6 @@ val noRemap: Configuration by configurations.creating
 unimined.minecraft {
     version(minecraftVersion)
 
-    accessWidener {
-        accessWidener(file("src/main/resources/${modId}.aw"))
-    }
-
     mappings {
         searge()
         mcp("stable", mcpVersion)

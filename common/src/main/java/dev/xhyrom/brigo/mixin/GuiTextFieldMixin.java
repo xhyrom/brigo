@@ -21,117 +21,127 @@ public abstract class GuiTextFieldMixin implements GuiTextFieldExtras {
     @Shadow private String text;
     @Shadow @Final private FontRenderer fontRenderer;
     @Shadow public int x;
-
-    @Shadow public abstract void setText(String textIn);
-
-    @Shadow public abstract boolean getVisible();
-
-    @Shadow public abstract boolean getEnableBackgroundDrawing();
-
-    @Shadow private boolean isEnabled;
-    @Shadow private int enabledColor;
-    @Shadow private int disabledColor;
     @Shadow public int y;
-    @Final @Shadow private int width;
-    @Final @Shadow private int height;
-
+    @Shadow @Final private int width;
+    @Shadow @Final private int height;
     @Shadow private int cursorPosition;
     @Shadow private int lineScrollOffset;
     @Shadow private int selectionEnd;
     @Shadow private boolean isFocused;
     @Shadow private int cursorCounter;
-
-    @Shadow public abstract int getWidth();
-
+    @Shadow private boolean isEnabled;
+    @Shadow private int enabledColor;
+    @Shadow private int disabledColor;
     @Shadow private boolean enableBackgroundDrawing;
-
-    @Shadow public abstract int getMaxStringLength();
-
-    @Shadow protected abstract void drawSelectionBox(int startX, int startY, int endX, int endY);
-
     @Shadow private Predicate<String> validator;
     @Shadow private GuiPageButtonList.GuiResponder guiResponder;
     @Shadow @Final private int id;
 
+    @Shadow public abstract void setText(String textIn);
+    @Shadow public abstract boolean getVisible();
+    @Shadow public abstract boolean getEnableBackgroundDrawing();
+    @Shadow public abstract int getWidth();
+    @Shadow public abstract int getMaxStringLength();
+    @Shadow protected abstract void drawSelectionBox(int startX, int startY, int endX, int endY);
     @Shadow public abstract void setResponderEntryValue(int idIn, String textIn);
 
-    @Unique
-    private String brigo$suggestion;
-    @Unique
-    private BiFunction<String, Integer, String> brigo$textFormatter = (string, integer) -> string;
+    @Unique private String brigo$currentSuggestion;
+    @Unique private BiFunction<String, Integer, String> brigo$textFormatter = (text, pos) -> text;
 
     @Inject(method = "setText", at = @At("TAIL"))
-    private void setText(String textIn, CallbackInfo ci) {
-        if (this.validator.apply(textIn)) {
-            this.setResponderEntryValue(this.id, textIn);
+    private void onTextSet(String text, CallbackInfo ci) {
+        if (this.validator.apply(text)) {
+            this.setResponderEntryValue(this.id, text);
         }
     }
 
     @Inject(method = "drawTextBox", at = @At("HEAD"), cancellable = true)
-    private void drawTextBox(CallbackInfo ci) {
-        if (this.getVisible()) {
-            if (this.getEnableBackgroundDrawing()) {
-                Gui.drawRect(this.x - 1, this.y - 1, this.x + this.width + 1, this.y + this.height + 1, -6250336);
-                Gui.drawRect(this.x, this.y, this.x + this.width, this.y + this.height, -16777216);
-            }
+    private void renderCustomTextBox(CallbackInfo ci) {
+        if (!this.getVisible()) {
+            ci.cancel();
+            return;
+        }
 
-            int i = this.isEnabled ? this.enabledColor : this.disabledColor;
-            int j = this.cursorPosition - this.lineScrollOffset;
-            int k = this.selectionEnd - this.lineScrollOffset;
-            String string = this.fontRenderer.trimStringToWidth(this.text.substring(this.lineScrollOffset), this.getWidth());
-            boolean bl = j >= 0 && j <= string.length();
-            boolean bl2 = this.isFocused && this.cursorCounter / 6 % 2 == 0 && bl;
-            int l = this.enableBackgroundDrawing ? this.x + 4 : this.x;
-            int m = this.enableBackgroundDrawing ? this.y + (this.height - 8) / 2 : this.y;
-            int n = l;
-            if (k > string.length()) {
-                k = string.length();
-            }
+        this.brigo$renderBackground();
 
-            if (!string.isEmpty()) {
-                String string2 = bl ? string.substring(0, j) : string;
-                n = this.fontRenderer.drawStringWithShadow(this.brigo$textFormatter.apply(string2, this.cursorPosition), (float)l, (float)m, i);
-            }
+        int textColor = this.isEnabled ? this.enabledColor : this.disabledColor;
+        int cursorPos = this.cursorPosition - this.lineScrollOffset;
+        int selectionEnd = this.selectionEnd - this.lineScrollOffset;
 
-            boolean bl3 = this.cursorPosition < this.text.length() || this.text.length() >= this.getMaxStringLength();
-            int o = n;
-            if (!bl) {
-                o = j > 0 ? l + this.width : l;
-            } else if (bl3) {
-                o = n - 1;
-                --n;
-            }
+        String visibleText = this.fontRenderer.trimStringToWidth(
+                this.text.substring(this.lineScrollOffset),
+                this.getWidth()
+        );
 
-            if (!string.isEmpty() && bl && j < string.length()) {
-                n = this.fontRenderer.drawStringWithShadow(this.brigo$textFormatter.apply(string.substring(j), this.cursorPosition), (float)n, (float)m, i);
-            }
+        boolean shouldShowCursor = cursorPos >= 0 && cursorPos <= visibleText.length();
+        boolean showBlinkingCursor = this.isFocused && this.cursorCounter / 6 % 2 == 0 && shouldShowCursor;
 
-            if (!bl3 && this.brigo$suggestion != null)
-            {
-                this.fontRenderer.drawStringWithShadow(this.brigo$suggestion, (float)(o - 1), (float)m, -8355712);
-            }
+        int textX = this.enableBackgroundDrawing ? this.x + 4 : this.x;
+        int textY = this.enableBackgroundDrawing ? this.y + (this.height - 8) / 2 : this.y;
+        int renderX = textX;
 
-            if (bl2) {
-                if (bl3) {
-                    Gui.drawRect(o, m - 1, o + 1, m + 1 + this.fontRenderer.FONT_HEIGHT, -3092272);
-                } else {
-                    this.fontRenderer.drawStringWithShadow("_", (float)o, (float)m, i);
-                }
-            }
+        selectionEnd = Math.min(selectionEnd, visibleText.length());
 
-            if (k != j) {
-                int p = l + this.fontRenderer.getStringWidth(string.substring(0, k));
-                this.drawSelectionBox(o, m - 1, p - 1, m + 1 + this.fontRenderer.FONT_HEIGHT);
+        if (!visibleText.isEmpty()) {
+            String textBeforeCursor = shouldShowCursor ? visibleText.substring(0, cursorPos) : visibleText;
+            renderX = this.fontRenderer.drawStringWithShadow(
+                    this.brigo$textFormatter.apply(textBeforeCursor, this.cursorPosition),
+                    (float) textX,
+                    (float) textY,
+                    textColor
+            );
+        }
+
+        boolean isAtEnd = this.cursorPosition < this.text.length() || this.text.length() >= this.getMaxStringLength();
+        int cursorX = shouldShowCursor ? (isAtEnd ? renderX - 1 : renderX) :
+                (cursorPos > 0 ? textX + this.width : textX);
+
+        if (!visibleText.isEmpty() && shouldShowCursor && cursorPos < visibleText.length()) {
+            this.fontRenderer.drawStringWithShadow(
+                    this.brigo$textFormatter.apply(visibleText.substring(cursorPos), this.cursorPosition),
+                    (float) renderX,
+                    (float) textY,
+                    textColor
+            );
+        }
+
+        if (!isAtEnd && this.brigo$currentSuggestion != null) {
+            this.fontRenderer.drawStringWithShadow(
+                    this.brigo$currentSuggestion,
+                    (float) (cursorX - 1),
+                    (float) textY,
+                    -8355712
+            );
+        }
+
+        if (showBlinkingCursor) {
+            if (isAtEnd) {
+                Gui.drawRect(cursorX, textY - 1, cursorX + 1, textY + 1 + this.fontRenderer.FONT_HEIGHT, -3092272);
+            } else {
+                this.fontRenderer.drawStringWithShadow("_", (float) cursorX, (float) textY, textColor);
             }
+        }
+
+        if (selectionEnd != cursorPos) {
+            int selectionX = textX + this.fontRenderer.getStringWidth(visibleText.substring(0, selectionEnd));
+            this.drawSelectionBox(cursorX, textY - 1, selectionX - 1, textY + 1 + this.fontRenderer.FONT_HEIGHT);
         }
 
         ci.cancel();
     }
 
     @Unique
+    private void brigo$renderBackground() {
+        if (this.getEnableBackgroundDrawing()) {
+            Gui.drawRect(this.x - 1, this.y - 1, this.x + this.width + 1, this.y + this.height + 1, -6250336);
+            Gui.drawRect(this.x, this.y, this.x + this.width, this.y + this.height, -16777216);
+        }
+    }
+
+    @Unique
     @Override
-    public void suggestion(@Nullable String string) {
-        this.brigo$suggestion = string;
+    public void suggestion(@Nullable String suggestion) {
+        this.brigo$currentSuggestion = suggestion;
     }
 
     @Unique
@@ -142,7 +152,9 @@ public abstract class GuiTextFieldMixin implements GuiTextFieldExtras {
 
     @Unique
     @Override
-    public int screenX(int i) {
-        return i > this.text.length() ? this.x : this.x + fontRenderer.getStringWidth(this.text.substring(0, i));
+    public int screenX(int position) {
+        return position > this.text.length() ?
+                this.x :
+                this.x + fontRenderer.getStringWidth(this.text.substring(0, position));
     }
 }

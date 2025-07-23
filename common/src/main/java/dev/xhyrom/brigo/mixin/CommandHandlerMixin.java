@@ -32,15 +32,11 @@ public class CommandHandlerMixin implements CommandHandlerExtras {
 
     @Inject(method = "registerCommand", at = @At("HEAD"))
     private void registerCommand(ICommand command, CallbackInfoReturnable<ICommand> cir) {
-        System.out.println("Registering command: " + command.getName());
         brigo$dispatcher.register(
                 LiteralArgumentBuilder.<CommandSource>literal(command.getName())
                     .then(
                             RequiredArgumentBuilder.<CommandSource, String>argument("params", StringArgumentType.greedyString())
-                                    .suggests((ctx, suggestions) -> {
-                                        System.out.println("Suggesting for command: " + command.getName());
-                                        return suggestions.buildFuture();
-                                    })
+                                    .suggests((ctx, suggestions) -> suggestions.buildFuture())
                     )
         );
     }
@@ -61,7 +57,7 @@ public class CommandHandlerMixin implements CommandHandlerExtras {
         {
             if (commandnode.canUse(pSource))
             {
-                ArgumentBuilder < ISuggestionProvider, ? > argumentbuilder = (ArgumentBuilder)commandnode.createBuilder();
+                ArgumentBuilder<ISuggestionProvider, ?> argumentbuilder = (ArgumentBuilder) commandnode.createBuilder();
                 argumentbuilder.requires((p_82126_) ->
                         true);
 
@@ -73,7 +69,7 @@ public class CommandHandlerMixin implements CommandHandlerExtras {
 
                 if (argumentbuilder instanceof RequiredArgumentBuilder)
                 {
-                    RequiredArgumentBuilder < ISuggestionProvider, ? > requiredargumentbuilder = (RequiredArgumentBuilder)argumentbuilder;
+                    RequiredArgumentBuilder<ISuggestionProvider, ?> requiredargumentbuilder = (RequiredArgumentBuilder) argumentbuilder;
 
                     if (requiredargumentbuilder.getSuggestionsProvider() != null)
                     {

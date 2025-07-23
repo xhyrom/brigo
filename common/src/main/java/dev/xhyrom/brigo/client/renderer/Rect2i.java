@@ -1,86 +1,61 @@
 package dev.xhyrom.brigo.client.renderer;
 
-public class Rect2i
-{
-    private int xPos;
-    private int yPos;
+public class Rect2i {
+    private int x;
+    private int y;
     private int width;
     private int height;
 
-    public Rect2i(int pXPos, int pYPos, int pWidth, int pHeight)
-    {
-        this.xPos = pXPos;
-        this.yPos = pYPos;
-        this.width = pWidth;
-        this.height = pHeight;
+    public Rect2i(int x, int y, int width, int height) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
     }
 
-    public Rect2i intersect(Rect2i pOther)
-    {
-        int i = this.xPos;
-        int j = this.yPos;
-        int k = this.xPos + this.width;
-        int l = this.yPos + this.height;
-        int i1 = pOther.getX();
-        int j1 = pOther.getY();
-        int k1 = i1 + pOther.getWidth();
-        int l1 = j1 + pOther.getHeight();
-        this.xPos = Math.max(i, i1);
-        this.yPos = Math.max(j, j1);
-        this.width = Math.max(0, Math.min(k, k1) - this.xPos);
-        this.height = Math.max(0, Math.min(l, l1) - this.yPos);
+    public int x() { return this.x; }
+    public int y() { return this.y; }
+    public int width() { return this.width; }
+    public int height() { return this.height; }
+
+    public Rect2i x(int x) {
+        this.x = x;
         return this;
     }
 
-    public int getX()
-    {
-        return this.xPos;
+    public Rect2i y(int y) {
+        this.y = y;
+        return this;
     }
 
-    public int getY()
-    {
-        return this.yPos;
+    public Rect2i width(int width) {
+        this.width = width;
+        return this;
     }
 
-    public void setX(int pXPos)
-    {
-        this.xPos = pXPos;
+    public Rect2i height(int height) {
+        this.height = height;
+        return this;
     }
 
-    public void setY(int pYPos)
-    {
-        this.yPos = pYPos;
+    public Rect2i position(int x, int y) {
+        this.x = x;
+        this.y = y;
+        return this;
     }
 
-    public int getWidth()
-    {
-        return this.width;
+    public Rect2i size(int width, int height) {
+        this.width = width;
+        this.height = height;
+        return this;
     }
 
-    public int getHeight()
-    {
-        return this.height;
+    public boolean contains(int pointX, int pointY) {
+        return pointX >= this.x && pointX <= this.x + this.width &&
+                pointY >= this.y && pointY <= this.y + this.height;
     }
 
-    public void setWidth(int pWidth)
-    {
-        this.width = pWidth;
-    }
-
-    public void setHeight(int pHeight)
-    {
-        this.height = pHeight;
-    }
-
-    public void setPosition(int pXPos, int pYPos)
-    {
-        this.xPos = pXPos;
-        this.yPos = pYPos;
-    }
-
-    public boolean contains(int pX, int pY)
-    {
-        return pX >= this.xPos && pX <= this.xPos + this.width && pY >= this.yPos && pY <= this.yPos + this.height;
-    }
+    public int right() { return x + width; }
+    public int bottom() { return y + height; }
 }
 

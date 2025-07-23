@@ -32,9 +32,6 @@ repositories {
 }
 
 dependencies {
-    api("folk.sisby:kaleido-config:0.3.1+1.3.1")
-    shadowBundle("folk.sisby:kaleido-config:0.3.1+1.3.1")
-
     api("org.tinylog:tinylog-api:2.7.0")
     api("org.tinylog:tinylog-impl:2.7.0")
     shadowBundle("org.tinylog:tinylog-api:2.7.0")

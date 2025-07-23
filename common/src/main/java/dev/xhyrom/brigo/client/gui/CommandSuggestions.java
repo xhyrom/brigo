@@ -28,7 +28,6 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentString;
 import net.minecraft.util.text.TextFormatting;
 import org.jetbrains.annotations.Nullable;
-import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
@@ -42,595 +41,596 @@ import java.util.regex.Pattern;
 
 public class CommandSuggestions {
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile("(\\s+)");
+    private static final TextFormatting[] ARGUMENT_COLORS = {
+            TextFormatting.AQUA, TextFormatting.YELLOW, TextFormatting.GREEN,
+            TextFormatting.LIGHT_PURPLE, TextFormatting.GOLD
+    };
 
-    final Minecraft minecraft;
-    final GuiScreen screen;
-    final GuiTextField input;
-    final FontRenderer fontRenderer;
-
-    private final boolean commandsOnly;
-    private final boolean onlyShowIfCursorPastError;
-
-    final int lineStartOffset;
-    final int suggestionLineLimit;
-    final boolean anchorToBottom;
-    final int fillColor;
+    private final Minecraft minecraft;
+    private final GuiScreen screen;
+    private final GuiTextField input;
+    private final FontRenderer fontRenderer;
+    private final CommandSuggestionsConfig config;
 
     private final List<String> commandUsage = Lists.newArrayList();
     private int commandUsagePosition;
     private int commandUsageWidth;
 
     private boolean allowSuggestions;
-    boolean keepSuggestions;
+    private boolean keepSuggestions;
 
-    @Nullable
-    private ParseResults<ISuggestionProvider> currentParse;
-    @Nullable
-    private CompletableFuture<Suggestions> pendingSuggestions;
-    @Nullable
-    CommandSuggestions.SuggestionsList suggestions;
+    @Nullable private ParseResults<ISuggestionProvider> currentParse;
+    @Nullable private CompletableFuture<Suggestions> pendingSuggestions;
+    @Nullable private SuggestionsList suggestions;
 
-    public CommandSuggestions(Minecraft pMinecraft, GuiScreen screen, GuiTextField input, FontRenderer fontRenderer, boolean commandsOnly, boolean onlyShowIfCursorPastError, int lineStartOffset, int suggestionLineLimit, boolean anchorToBottom, int fillColor)
-    {
-        this.minecraft = pMinecraft;
+    public CommandSuggestions(Minecraft minecraft, GuiScreen screen, GuiTextField input,
+                              FontRenderer fontRenderer, CommandSuggestionsConfig config) {
+        this.minecraft = minecraft;
         this.screen = screen;
         this.input = input;
         this.fontRenderer = fontRenderer;
-        this.commandsOnly = commandsOnly;
-        this.onlyShowIfCursorPastError = onlyShowIfCursorPastError;
-        this.lineStartOffset = lineStartOffset;
-        this.suggestionLineLimit = suggestionLineLimit;
-        this.anchorToBottom = anchorToBottom;
-        this.fillColor = fillColor;
+        this.config = config;
 
-        ((GuiTextFieldExtras) input).textFormatter(this::formatChat);
+        ((GuiTextFieldExtras) input).textFormatter(this::formatCommandText);
     }
 
-    public void setAllowSuggestions(boolean pAutoSuggest)
-    {
-        this.allowSuggestions = pAutoSuggest;
+    public static class CommandSuggestionsConfig {
+        public final boolean commandsOnly;
+        public final boolean onlyShowIfCursorPastError;
+        public final int lineStartOffset;
+        public final int suggestionLineLimit;
+        public final boolean anchorToBottom;
+        public final int fillColor;
 
-        if (!pAutoSuggest)
-        {
+        public CommandSuggestionsConfig(boolean commandsOnly, boolean onlyShowIfCursorPastError,
+                                        int lineStartOffset, int suggestionLineLimit,
+                                        boolean anchorToBottom, int fillColor) {
+            this.commandsOnly = commandsOnly;
+            this.onlyShowIfCursorPastError = onlyShowIfCursorPastError;
+            this.lineStartOffset = lineStartOffset;
+            this.suggestionLineLimit = suggestionLineLimit;
+            this.anchorToBottom = anchorToBottom;
+            this.fillColor = fillColor;
+        }
+    }
+
+    public CommandSuggestions allowSuggestions(boolean allow) {
+        this.allowSuggestions = allow;
+        if (!allow) {
             this.suggestions = null;
         }
+        return this;
     }
 
-    public boolean keyPressed(int pKeyCode)
-    {
-        if (this.suggestions != null && this.suggestions.keyPressed(pKeyCode))
-        {
+    public boolean handleKeyPress(int keyCode) {
+        if (this.suggestions != null && this.suggestions.handleKeyPress(keyCode)) {
             return true;
-        }
-        else if (pKeyCode == Keyboard.KEY_TAB)
-        {
+        } else if (keyCode == Keyboard.KEY_TAB) {
             this.showSuggestions(true);
             return true;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
 
-    public boolean mouseScrolled(double pDelta)
-    {
-        return this.suggestions != null && this.suggestions.mouseScrolled(MathHelper.clamp(pDelta, -1.0D, 1.0D));
+    public boolean handleMouseScroll(double delta) {
+        return this.suggestions != null && this.suggestions.handleMouseScroll(
+                MathHelper.clamp(delta, -1.0D, 1.0D));
     }
 
-    public boolean mouseClicked(double pMouseX, double p_93886_, int pMouseY)
-    {
-        return this.suggestions != null && this.suggestions.mouseClicked((int)pMouseX, (int)p_93886_, pMouseY);
+    public boolean handleMouseClick(double mouseX, double mouseY, int button) {
+        return this.suggestions != null &&
+                this.suggestions.handleMouseClick((int)mouseX, (int)mouseY, button);
     }
 
-    public void showSuggestions(boolean pNarrateFirstSuggestion)
-    {
-        if (this.pendingSuggestions != null && this.pendingSuggestions.isDone())
-        {
+    public void showSuggestions(boolean narrateFirst) {
+        if (this.pendingSuggestions != null && this.pendingSuggestions.isDone()) {
             Suggestions suggestions = this.pendingSuggestions.join();
 
-            if (!suggestions.isEmpty())
-            {
-                int i = 0;
+            if (!suggestions.isEmpty()) {
+                int maxWidth = suggestions.getList().stream()
+                        .mapToInt(suggestion -> this.fontRenderer.getStringWidth(suggestion.getText()))
+                        .max()
+                        .orElse(0);
 
-                for (Suggestion suggestion : suggestions.getList())
-                {
-                    i = Math.max(i, this.fontRenderer.getStringWidth(suggestion.getText()));
-                }
+                int x = MathHelper.clamp(
+                        ((GuiTextFieldExtras) this.input).screenX(suggestions.getRange().getStart()),
+                        0, this.screen.width - maxWidth
+                );
 
-                int j = MathHelper.clamp(((GuiTextFieldExtras) this.input).screenX(suggestions.getRange().getStart()), 0, this.screen.width - i);
-                int k = this.anchorToBottom ? this.screen.height - 12 : 72;
-                this.suggestions = new CommandSuggestions.SuggestionsList(j, k, i, this.sortSuggestions(suggestions));
+                int y = this.config.anchorToBottom ? this.screen.height - 12 : 72;
+                this.suggestions = new SuggestionsList(x, y, maxWidth, sortSuggestions(suggestions));
             }
         }
     }
 
-    private List<Suggestion> sortSuggestions(Suggestions pSuggestions)
-    {
-        String s = this.input.getText().substring(0, this.input.getCursorPosition());
-        int i = getLastWordIndex(s);
-        String s1 = s.substring(i).toLowerCase(Locale.ROOT);
-        List<Suggestion> list = Lists.newArrayList();
-        List<Suggestion> list1 = Lists.newArrayList();
+    private List<Suggestion> sortSuggestions(Suggestions suggestions) {
+        String inputText = this.input.getText().substring(0, this.input.getCursorPosition());
+        int lastWordIndex = findLastWordIndex(inputText);
+        String currentWord = inputText.substring(lastWordIndex).toLowerCase(Locale.ROOT);
 
-        for (Suggestion suggestion : pSuggestions.getList())
-        {
-            if (!suggestion.getText().startsWith(s1) && !suggestion.getText().startsWith("minecraft:" + s1))
-            {
-                list1.add(suggestion);
-            }
-            else
-            {
-                list.add(suggestion);
+        List<Suggestion> prioritySuggestions = Lists.newArrayList();
+        List<Suggestion> otherSuggestions = Lists.newArrayList();
+
+        for (Suggestion suggestion : suggestions.getList()) {
+            String text = suggestion.getText();
+            if (text.startsWith(currentWord) || text.startsWith("minecraft:" + currentWord)) {
+                prioritySuggestions.add(suggestion);
+            } else {
+                otherSuggestions.add(suggestion);
             }
         }
 
-        list.addAll(list1);
-        return list;
+        prioritySuggestions.addAll(otherSuggestions);
+        return prioritySuggestions;
     }
 
-    public void updateCommandInfo()
-    {
-        String s = this.input.getText();
+    public void updateCommandInfo() {
+        String text = this.input.getText();
 
-        if (this.currentParse != null && !this.currentParse.getReader().getString().equals(s))
-        {
+        if (this.currentParse != null && !this.currentParse.getReader().getString().equals(text)) {
             this.currentParse = null;
         }
 
-        if (!this.keepSuggestions)
-        {
+        if (!this.keepSuggestions) {
             ((GuiTextFieldExtras) this.input).suggestion(null);
             this.suggestions = null;
         }
 
         this.commandUsage.clear();
-        StringReader stringreader = new StringReader(s);
-        boolean flag = stringreader.canRead() && stringreader.peek() == '/';
+        StringReader reader = new StringReader(text);
+        boolean hasCommandPrefix = reader.canRead() && reader.peek() == '/';
 
-        if (flag)
-        {
-            stringreader.skip();
+        if (hasCommandPrefix) {
+            reader.skip();
         }
 
-        boolean flag1 = this.commandsOnly || flag;
-        int i = this.input.getCursorPosition();
+        boolean isCommand = this.config.commandsOnly || hasCommandPrefix;
+        int cursorPos = this.input.getCursorPosition();
 
-        if (flag1)
-        {
-            CommandDispatcher<ISuggestionProvider> commanddispatcher = ((NetHandlerPlayClientExtras) this.minecraft.player.connection).commands();
-
-            if (this.currentParse == null)
-            {
-                this.currentParse = commanddispatcher.parse(stringreader, ((NetHandlerPlayClientExtras) this.minecraft.player.connection).suggestionsProvider());
-            }
-
-            int j = this.onlyShowIfCursorPastError ? stringreader.getCursor() : 1;
-
-            if (i >= j && (this.suggestions == null || !this.keepSuggestions))
-            {
-                this.pendingSuggestions = commanddispatcher.getCompletionSuggestions(this.currentParse, i);
-                this.pendingSuggestions.thenRun(() ->
-                {
-                    if (this.pendingSuggestions.isDone())
-                    {
-                        this.updateUsageInfo();
-                    }
-                });
-            }
-        }
-        else
-        {
-            String s1 = s.substring(0, i);
-            int k = getLastWordIndex(s1);
-            Collection<String> collection = ((NetHandlerPlayClientExtras) this.minecraft.player.connection).suggestionsProvider().getPlayerNames();
-            this.pendingSuggestions = ISuggestionProvider.suggest(collection, new SuggestionsBuilder(s1, k));
+        if (isCommand) {
+            this.processCommandSuggestions(reader, cursorPos);
+        } else {
+            this.processPlayerNameSuggestions(text, cursorPos);
         }
     }
 
-    private static int getLastWordIndex(String pText)
-    {
-        if (Strings.isNullOrEmpty(pText))
-        {
+    private void processCommandSuggestions(StringReader reader, int cursorPos) {
+        CommandDispatcher<ISuggestionProvider> dispatcher =
+                ((NetHandlerPlayClientExtras) this.minecraft.player.connection).commands();
+
+        if (this.currentParse == null) {
+            ISuggestionProvider provider =
+                    ((NetHandlerPlayClientExtras) this.minecraft.player.connection).suggestionsProvider();
+            this.currentParse = dispatcher.parse(reader, provider);
+        }
+
+        int minCursor = this.config.onlyShowIfCursorPastError ? reader.getCursor() : 1;
+
+        if (cursorPos >= minCursor && (this.suggestions == null || !this.keepSuggestions)) {
+            this.pendingSuggestions = dispatcher.getCompletionSuggestions(this.currentParse, cursorPos);
+            this.pendingSuggestions.thenRun(() -> {
+                if (this.pendingSuggestions.isDone()) {
+                    this.updateUsageInfo();
+                }
+            });
+        }
+    }
+
+    private void processPlayerNameSuggestions(String text, int cursorPos) {
+        String textToCursor = text.substring(0, cursorPos);
+        int lastWordIndex = findLastWordIndex(textToCursor);
+        Collection<String> playerNames =
+                ((NetHandlerPlayClientExtras) this.minecraft.player.connection)
+                        .suggestionsProvider().getPlayerNames();
+
+        this.pendingSuggestions = ISuggestionProvider.suggest(
+                playerNames, new SuggestionsBuilder(textToCursor, lastWordIndex)
+        );
+    }
+
+    private static int findLastWordIndex(String text) {
+        if (Strings.isNullOrEmpty(text)) {
             return 0;
         }
-        else
-        {
-            int i = 0;
 
-            for (Matcher matcher = WHITESPACE_PATTERN.matcher(pText); matcher.find(); i = matcher.end())
-            {
-            }
-
-            return i;
+        int lastIndex = 0;
+        Matcher matcher = WHITESPACE_PATTERN.matcher(text);
+        while (matcher.find()) {
+            lastIndex = matcher.end();
         }
+        return lastIndex;
     }
 
-    private static String getExceptionMessage(CommandSyntaxException pException)
-    {
-        ITextComponent component = ComponentUtils.fromMessage(pException.getRawMessage());
-        String s = pException.getContext();
-        return s == null ? component.getFormattedText() : (new TextComponentString(String.format("%s at position %s: %s", component, pException.getCursor(), s))).getFormattedText();
-    }
-
-    @Nullable
-    public static <S> CommandSyntaxException getParseException(ParseResults<S> pResult)
-    {
-        if (!pResult.getReader().canRead())
-        {
-            return null;
-        }
-        else if (pResult.getExceptions().size() == 1)
-        {
-            return pResult.getExceptions().values().iterator().next();
-        }
-        else
-        {
-            return pResult.getContext().getRange().isEmpty() ? CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(pResult.getReader()) : CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownArgument().createWithContext(pResult.getReader());
-        }
-    }
-
-    private void updateUsageInfo()
-    {
-        if (this.input.getCursorPosition() == this.input.getText().length())
-        {
-            if (this.pendingSuggestions.join().isEmpty() && !this.currentParse.getExceptions().isEmpty())
-            {
-                int i = 0;
-
-                for (Map.Entry<CommandNode<ISuggestionProvider>, CommandSyntaxException> entry : this.currentParse.getExceptions().entrySet())
-                {
-                    CommandSyntaxException commandsyntaxexception = entry.getValue();
-
-                    if (commandsyntaxexception.getType() == CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect())
-                    {
-                        ++i;
-                    }
-                    else
-                    {
-                        this.commandUsage.add(getExceptionMessage(commandsyntaxexception));
-                    }
-                }
-
-                if (i > 0)
-                {
-                    this.commandUsage.add(getExceptionMessage(CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().create()));
-                }
-            }
-            else if (this.currentParse.getReader().canRead())
-            {
-                this.commandUsage.add(getExceptionMessage(getParseException(this.currentParse)));
-            }
+    private void updateUsageInfo() {
+        if (this.input.getCursorPosition() == this.input.getText().length()) {
+            this.processParsingErrors();
         }
 
         this.commandUsagePosition = 0;
         this.commandUsageWidth = this.screen.width;
 
-        if (this.commandUsage.isEmpty())
-        {
+        if (this.commandUsage.isEmpty()) {
             this.fillNodeUsage(TextFormatting.GRAY);
         }
 
         this.suggestions = null;
-
-        if (this.allowSuggestions)
-        {
+        if (this.allowSuggestions) {
             this.showSuggestions(false);
         }
     }
 
-    private void fillNodeUsage(TextFormatting textFormatting)
-    {
-        CommandContextBuilder<ISuggestionProvider> commandcontextbuilder = this.currentParse.getContext();
-        SuggestionContext<ISuggestionProvider> suggestioncontext = commandcontextbuilder.findSuggestionContext(this.input.getCursorPosition());
-        Map<CommandNode<ISuggestionProvider>, String> map = ((NetHandlerPlayClientExtras) this.minecraft.player.connection).commands().getSmartUsage(suggestioncontext.parent, ((NetHandlerPlayClientExtras) this.minecraft.player.connection).suggestionsProvider());
-        List<String> list = Lists.newArrayList();
-        int i = 0;
+    private void processParsingErrors() {
+        if (this.pendingSuggestions.join().isEmpty() && !this.currentParse.getExceptions().isEmpty()) {
+            int literalErrors = 0;
 
-        for (Map.Entry<CommandNode<ISuggestionProvider>, String> entry : map.entrySet())
-        {
-            if (!(entry.getKey() instanceof LiteralCommandNode))
-            {
-                list.add(textFormatting + entry.getValue());
-                i = Math.max(i, this.fontRenderer.getStringWidth(entry.getValue()));
+            for (Map.Entry<CommandNode<ISuggestionProvider>, CommandSyntaxException> entry :
+                    this.currentParse.getExceptions().entrySet()) {
+                CommandSyntaxException exception = entry.getValue();
+
+                if (exception.getType() == CommandSyntaxException.BUILT_IN_EXCEPTIONS.literalIncorrect()) {
+                    literalErrors++;
+                } else {
+                    this.commandUsage.add(formatException(exception));
+                }
+            }
+
+            if (literalErrors > 0) {
+                this.commandUsage.add(formatException(
+                        CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().create()
+                ));
+            }
+        } else if (this.currentParse.getReader().canRead()) {
+            CommandSyntaxException parseException = getParseException(this.currentParse);
+            if (parseException != null) {
+                this.commandUsage.add(formatException(parseException));
             }
         }
-
-        if (!list.isEmpty())
-        {
-            this.commandUsage.addAll(list);
-            this.commandUsagePosition = MathHelper.clamp(((GuiTextFieldExtras) this.input).screenX(suggestioncontext.startPos), 0, this.screen.width - i);
-            this.commandUsageWidth = i;
-        }
-    }
-
-    private String formatChat(String string, int i)
-    {
-        return this.currentParse != null ? formatText(this.currentParse, string, i) : string;
     }
 
     @Nullable
-    static String calculateSuggestionSuffix(String pInputText, String pSuggestionText)
-    {
-        return pSuggestionText.startsWith(pInputText) ? pSuggestionText.substring(pInputText.length()) : null;
+    public static <S> CommandSyntaxException getParseException(ParseResults<S> result) {
+        if (!result.getReader().canRead()) {
+            return null;
+        } else if (result.getExceptions().size() == 1) {
+            return result.getExceptions().values().iterator().next();
+        } else if (result.getContext().getRange().isEmpty()) {
+            return CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownCommand().createWithContext(result.getReader());
+        } else {
+            return CommandSyntaxException.BUILT_IN_EXCEPTIONS.dispatcherUnknownArgument().createWithContext(result.getReader());
+        }
     }
 
-    private static String formatText(ParseResults<ISuggestionProvider> parseResults, String command, int maxLength)
-    {
-        TextFormatting[] textFormattings = new TextFormatting[]{TextFormatting.AQUA, TextFormatting.YELLOW, TextFormatting.GREEN, TextFormatting.LIGHT_PURPLE, TextFormatting.GOLD};
-        String string2 = TextFormatting.GRAY.toString();
-        StringBuilder stringBuilder = new StringBuilder(string2);
-        int j = 0;
-        int k = -1;
-        CommandContextBuilder<ISuggestionProvider> commandContextBuilder = parseResults.getContext().getLastChild();
+    private void fillNodeUsage(TextFormatting color) {
+        CommandContextBuilder<ISuggestionProvider> context = this.currentParse.getContext();
+        SuggestionContext<ISuggestionProvider> suggestionContext =
+                context.findSuggestionContext(this.input.getCursorPosition());
 
-        for(ParsedArgument<ISuggestionProvider, ?> parsedArgument : commandContextBuilder.getArguments().values()) {
-            ++k;
-            if (k >= textFormattings.length) {
-                k = 0;
-            }
+        CommandDispatcher<ISuggestionProvider> dispatcher =
+                ((NetHandlerPlayClientExtras) this.minecraft.player.connection).commands();
+        ISuggestionProvider provider =
+                ((NetHandlerPlayClientExtras) this.minecraft.player.connection).suggestionsProvider();
 
-            int l = Math.max(parsedArgument.getRange().getStart() - maxLength, 0);
-            if (l >= command.length()) {
-                break;
-            }
+        Map<CommandNode<ISuggestionProvider>, String> usageMap =
+                dispatcher.getSmartUsage(suggestionContext.parent, provider);
 
-            int m = Math.min(parsedArgument.getRange().getEnd() - maxLength, command.length());
-            if (m > 0) {
-                stringBuilder.append(command, j, l);
-                stringBuilder.append(textFormattings[k]);
-                stringBuilder.append(command, l, m);
-                stringBuilder.append(string2);
-                j = m;
+        List<String> usageList = Lists.newArrayList();
+        int maxWidth = 0;
+
+        for (Map.Entry<CommandNode<ISuggestionProvider>, String> entry : usageMap.entrySet()) {
+            if (!(entry.getKey() instanceof LiteralCommandNode)) {
+                String usage = color + entry.getValue();
+                usageList.add(usage);
+                maxWidth = Math.max(maxWidth, this.fontRenderer.getStringWidth(entry.getValue()));
             }
         }
 
+        if (!usageList.isEmpty()) {
+            this.commandUsage.addAll(usageList);
+            this.commandUsagePosition = MathHelper.clamp(
+                    ((GuiTextFieldExtras) this.input).screenX(suggestionContext.startPos),
+                    0, this.screen.width - maxWidth
+            );
+            this.commandUsageWidth = maxWidth;
+        }
+    }
+
+    private String formatCommandText(String text, int offset) {
+        return this.currentParse != null ? formatParsedCommand(this.currentParse, text, offset) : text;
+    }
+
+    @Nullable
+    static String calculateSuggestionSuffix(String inputText, String suggestionText) {
+        return suggestionText.startsWith(inputText) ?
+                suggestionText.substring(inputText.length()) : null;
+    }
+
+    private static String formatException(CommandSyntaxException exception) {
+        ITextComponent component = ComponentUtils.fromMessage(exception.getRawMessage());
+        String context = exception.getContext();
+
+        if (context == null) {
+            return component.getFormattedText();
+        } else {
+            return new TextComponentString(String.format(
+                    "%s at position %s: %s",
+                    component.getFormattedText(),
+                    exception.getCursor(),
+                    context
+            )).getFormattedText();
+        }
+    }
+
+    private static String formatParsedCommand(ParseResults<ISuggestionProvider> parseResults,
+                                              String command, int maxLength) {
+        String grayCode = TextFormatting.GRAY.toString();
+        StringBuilder result = new StringBuilder(grayCode);
+        int currentPos = 0;
+        int colorIndex = -1;
+
+        CommandContextBuilder<ISuggestionProvider> context = parseResults.getContext().getLastChild();
+
+        for (ParsedArgument<ISuggestionProvider, ?> argument : context.getArguments().values()) {
+            colorIndex = (colorIndex + 1) % ARGUMENT_COLORS.length;
+
+            int start = Math.max(argument.getRange().getStart() - maxLength, 0);
+            if (start >= command.length()) break;
+
+            int end = Math.min(argument.getRange().getEnd() - maxLength, command.length());
+            if (end > 0) {
+                result.append(command, currentPos, start);
+                result.append(ARGUMENT_COLORS[colorIndex]);
+                result.append(command, start, end);
+                result.append(grayCode);
+                currentPos = end;
+            }
+        }
+
+        // Handle parsing errors (red text)
         if (parseResults.getReader().canRead()) {
-            int n = Math.max(parseResults.getReader().getCursor() - maxLength, 0);
-            if (n < command.length()) {
-                int o = Math.min(n + parseResults.getReader().getRemainingLength(), command.length());
-                stringBuilder.append(command, j, n);
-                stringBuilder.append(TextFormatting.RED);
-                stringBuilder.append(command, n, o);
-                j = o;
+            int errorStart = Math.max(parseResults.getReader().getCursor() - maxLength, 0);
+            if (errorStart < command.length()) {
+                int errorEnd = Math.min(errorStart + parseResults.getReader().getRemainingLength(), command.length());
+                result.append(command, currentPos, errorStart);
+                result.append(TextFormatting.RED);
+                result.append(command, errorStart, errorEnd);
+                currentPos = errorEnd;
             }
         }
 
-        stringBuilder.append(command, j, command.length());
-        return stringBuilder.toString();
+        result.append(command, currentPos, command.length());
+        return result.toString();
     }
 
-    public void render(int mouseX, int mouseY)
-    {
+    public void render(int mouseX, int mouseY) {
         if (this.suggestions != null) {
             this.suggestions.render(mouseX, mouseY);
         } else {
-            int i = 0;
-
-            for (String string : this.commandUsage) {
-                int j = this.anchorToBottom ? this.screen.height - 14 - 13 - 12 * i : 72 + 12 * i;
-                Gui.drawRect(this.commandUsagePosition - 1, j, this.commandUsagePosition + this.commandUsageWidth + 1, j + 12, this.fillColor);
-                this.fontRenderer.drawStringWithShadow(string, (float)this.commandUsagePosition, (float)(j + 2), -1);
-                ++i;
-            }
+            this.renderUsageInfo();
         }
     }
 
-    public class SuggestionsList
-    {
-        private final Rect2i rect;
-        private final String originalContents;
-        private final List<Suggestion> suggestionList;
-        private int offset;
-        private int current;
-        private Vec2f lastMouse = Vec2f.ZERO;
+    private void renderUsageInfo() {
+        for (int i = 0; i < this.commandUsage.size(); i++) {
+            String usage = this.commandUsage.get(i);
+            int y = this.config.anchorToBottom ?
+                    this.screen.height - 14 - 13 - 12 * i :
+                    72 + 12 * i;
+
+            Gui.drawRect(
+                    this.commandUsagePosition - 1,
+                    y,
+                    this.commandUsagePosition + this.commandUsageWidth + 1,
+                    y + 12,
+                    this.config.fillColor
+            );
+
+            this.fontRenderer.drawStringWithShadow(
+                    usage,
+                    (float) this.commandUsagePosition,
+                    (float) (y + 2),
+                    -1
+            );
+        }
+    }
+
+    public class SuggestionsList {
+        private final Rect2i bounds;
+        private final String originalText;
+        private final List<Suggestion> suggestions;
+        private int scrollOffset;
+        private int selectedIndex;
+        private Vec2f lastMousePos = Vec2f.ZERO;
         private boolean tabCycles;
 
-        SuggestionsList(int p_93957_, int p_93958_, int p_93959_, List<Suggestion> p_93960_)
-        {
-            int i = p_93957_ - 1;
-            int j = CommandSuggestions.this.anchorToBottom ? p_93958_ - 3 - Math.min(p_93960_.size(), CommandSuggestions.this.suggestionLineLimit) * 12 : p_93958_;
-            this.rect = new Rect2i(i, j, p_93959_ + 1, Math.min(p_93960_.size(), CommandSuggestions.this.suggestionLineLimit) * 12);
-            this.originalContents = CommandSuggestions.this.input.getText();
-            this.suggestionList = p_93960_;
+        SuggestionsList(int x, int y, int width, List<Suggestion> suggestions) {
+            int actualY = config.anchorToBottom ?
+                    y - 3 - Math.min(suggestions.size(), config.suggestionLineLimit) * 12 : y;
+
+            this.bounds = new Rect2i(x - 1, actualY, width + 1,
+                    Math.min(suggestions.size(), config.suggestionLineLimit) * 12);
+            this.originalText = input.getText();
+            this.suggestions = suggestions;
             this.select(0);
         }
 
-        public void render(int mouseX, int mouseY)
-        {
-            int i = Math.min(this.suggestionList.size(), CommandSuggestions.this.suggestionLineLimit);
-            int j = -5592406;
-            boolean flag = this.offset > 0;
-            boolean flag1 = this.suggestionList.size() > this.offset + i;
-            boolean flag2 = flag || flag1;
-            boolean flag3 = this.lastMouse.x != (float)mouseX || this.lastMouse.y != (float)mouseY;
+        public void render(int mouseX, int mouseY) {
+            int visibleCount = Math.min(this.suggestions.size(), config.suggestionLineLimit);
+            boolean hasScrollUp = this.scrollOffset > 0;
+            boolean hasScrollDown = this.suggestions.size() > this.scrollOffset + visibleCount;
+            boolean hasMouseMoved = this.lastMousePos.x != (float) mouseX ||
+                    this.lastMousePos.y != (float) mouseY;
 
-            if (flag3)
-            {
-                this.lastMouse = new Vec2f((float)mouseX, (float)mouseY);
+            if (hasMouseMoved) {
+                this.lastMousePos = new Vec2f((float) mouseX, (float) mouseY);
             }
 
-            if (flag2)
-            {
-                Gui.drawRect(this.rect.getX(), this.rect.getY() - 1, this.rect.getX() + this.rect.getWidth(), this.rect.getY(), CommandSuggestions.this.fillColor);
-                Gui.drawRect(this.rect.getX(), this.rect.getY() + this.rect.getHeight(), this.rect.getX() + this.rect.getWidth(), this.rect.getY() + this.rect.getHeight() + 1, CommandSuggestions.this.fillColor);
+            this.renderScrollIndicators(hasScrollUp, hasScrollDown);
+            this.renderSuggestions(mouseX, mouseY, visibleCount, hasMouseMoved);
+        }
 
-                if (flag)
-                {
-                    for (int k = 0; k < this.rect.getWidth(); ++k)
-                    {
-                        if (k % 2 == 0)
-                        {
-                            Gui.drawRect(this.rect.getX() + k, this.rect.getY() - 1, this.rect.getX() + k + 1, this.rect.getY(), -1);
-                        }
+        private void renderScrollIndicators(boolean hasScrollUp, boolean hasScrollDown) {
+            if (hasScrollUp || hasScrollDown) {
+                // Top border
+                Gui.drawRect(bounds.x(), bounds.y() - 1, bounds.right(), bounds.y(), config.fillColor);
+                // Bottom border
+                Gui.drawRect(bounds.x(), bounds.bottom(), bounds.right(), bounds.bottom() + 1, config.fillColor);
+
+                if (hasScrollUp) {
+                    for (int i = 0; i < bounds.width(); i += 2) {
+                        Gui.drawRect(bounds.x() + i, bounds.y() - 1, bounds.x() + i + 1, bounds.y(), -1);
                     }
                 }
 
-                if (flag1)
-                {
-                    for (int i1 = 0; i1 < this.rect.getWidth(); ++i1)
-                    {
-                        if (i1 % 2 == 0)
-                        {
-                            Gui.drawRect(this.rect.getX() + i1, this.rect.getY() + this.rect.getHeight(), this.rect.getX() + i1 + 1, this.rect.getY() + this.rect.getHeight() + 1, -1);
-                        }
+                if (hasScrollDown) {
+                    for (int i = 0; i < bounds.width(); i += 2) {
+                        Gui.drawRect(bounds.x() + i, bounds.bottom(), bounds.x() + i + 1, bounds.bottom() + 1, -1);
                     }
                 }
             }
+        }
 
-            boolean flag4 = false;
+        private void renderSuggestions(int mouseX, int mouseY, int visibleCount, boolean hasMouseMoved) {
+            boolean showTooltip = false;
 
-            for (int l = 0; l < i; ++l)
-            {
-                Suggestion suggestion = this.suggestionList.get(l + this.offset);
-                Gui.drawRect(this.rect.getX(), this.rect.getY() + 12 * l, this.rect.getX() + this.rect.getWidth(), this.rect.getY() + 12 * l + 12, CommandSuggestions.this.fillColor);
+            for (int i = 0; i < visibleCount; i++) {
+                Suggestion suggestion = this.suggestions.get(i + this.scrollOffset);
+                int itemY = bounds.y() + 12 * i;
 
-                if (mouseX > this.rect.getX() && mouseX < this.rect.getX() + this.rect.getWidth() && mouseY > this.rect.getY() + 12 * l && mouseY < this.rect.getY() + 12 * l + 12)
-                {
-                    if (flag3)
-                    {
-                        this.select(l + this.offset);
+                Gui.drawRect(bounds.x(), itemY, bounds.right(), itemY + 12, config.fillColor);
+
+                boolean isHovered = mouseX > bounds.x() && mouseX < bounds.right() &&
+                        mouseY > itemY && mouseY < itemY + 12;
+
+                if (isHovered) {
+                    if (hasMouseMoved) {
+                        this.select(i + this.scrollOffset);
                     }
-
-                    flag4 = true;
+                    showTooltip = true;
                 }
 
-                CommandSuggestions.this.fontRenderer.drawStringWithShadow(suggestion.getText(), (float)(this.rect.getX() + 1), (float)(this.rect.getY() + 2 + 12 * l), l + this.offset == this.current ? -256 : -5592406);
+                int textColor = (i + this.scrollOffset == this.selectedIndex) ? -256 : -5592406;
+                fontRenderer.drawStringWithShadow(
+                        suggestion.getText(),
+                        (float) (bounds.x() + 1),
+                        (float) (itemY + 2),
+                        textColor
+                );
             }
 
-            if (flag4)
-            {
-                Message message = this.suggestionList.get(this.current).getTooltip();
-
-                if (message != null)
-                {
-                    CommandSuggestions.this.screen.drawHoveringText(ComponentUtils.fromMessage(message).getFormattedText(), mouseX, mouseY);
+            if (showTooltip) {
+                Message tooltip = this.suggestions.get(this.selectedIndex).getTooltip();
+                if (tooltip != null) {
+                    screen.drawHoveringText(ComponentUtils.fromMessage(tooltip).getFormattedText(), mouseX, mouseY);
                 }
             }
         }
 
-        public boolean mouseClicked(int pMouseX, int pMouseY, int pMouseButton)
-        {
-            if (!this.rect.contains(pMouseX, pMouseY))
-            {
+        public boolean handleMouseClick(int mouseX, int mouseY, int button) {
+            if (!bounds.contains(mouseX, mouseY)) {
                 return false;
             }
-            else
-            {
-                int i = (pMouseY - this.rect.getY()) / 12 + this.offset;
 
-                if (i >= 0 && i < this.suggestionList.size())
-                {
-                    this.select(i);
-                    this.useSuggestion();
-                }
+            int clickedIndex = (mouseY - bounds.y()) / 12 + this.scrollOffset;
+            if (clickedIndex >= 0 && clickedIndex < this.suggestions.size()) {
+                this.select(clickedIndex);
+                this.applySuggestion();
+            }
+            return true;
+        }
 
+        public boolean handleMouseScroll(double delta) {
+            ScaledResolution resolution = new ScaledResolution(minecraft);
+            int mouseX = Mouse.getX() * resolution.getScaledWidth() / minecraft.displayWidth;
+            int mouseY = resolution.getScaledHeight() -
+                    Mouse.getY() * resolution.getScaledHeight() / minecraft.displayHeight - 1;
+
+            if (bounds.contains(mouseX, mouseY)) {
+                int newOffset = MathHelper.clamp(
+                        (int) (this.scrollOffset - delta),
+                        0,
+                        Math.max(this.suggestions.size() - config.suggestionLineLimit, 0)
+                );
+                this.scrollOffset = newOffset;
                 return true;
+            }
+            return false;
+        }
+
+        public boolean handleKeyPress(int keyCode) {
+            switch (keyCode) {
+                case Keyboard.KEY_UP:
+                    this.cycle(-1);
+                    this.tabCycles = false;
+                    return true;
+                case Keyboard.KEY_DOWN:
+                    this.cycle(1);
+                    this.tabCycles = false;
+                    return true;
+                case Keyboard.KEY_TAB:
+                    if (this.tabCycles) {
+                        this.cycle(GuiScreen.isShiftKeyDown() ? -1 : 1);
+                    }
+                    this.applySuggestion();
+                    return true;
+                case Keyboard.KEY_ESCAPE:
+                    this.hide();
+                    return false;
+                default:
+                    return false;
             }
         }
 
-        public boolean mouseScrolled(double pDelta)
-        {
-            ScaledResolution scaledResolution = new ScaledResolution(minecraft);
-            int i = Mouse.getX() * scaledResolution.getScaledWidth() / minecraft.displayWidth;
-            int j = scaledResolution.getScaledHeight() - Mouse.getY() * scaledResolution.getScaledHeight() / minecraft.displayHeight - 1;
+        public void cycle(int direction) {
+            this.select(this.selectedIndex + direction);
+            this.updateScrollOffset();
+        }
 
-            if (this.rect.contains(i, j))
-            {
-                this.offset = MathHelper.clamp((int)((double)this.offset - pDelta), 0, Math.max(this.suggestionList.size() - CommandSuggestions.this.suggestionLineLimit, 0));
-                return true;
-            }
-            else
-            {
-                return false;
+        private void updateScrollOffset() {
+            int visibleStart = this.scrollOffset;
+            int visibleEnd = this.scrollOffset + config.suggestionLineLimit - 1;
+
+            if (this.selectedIndex < visibleStart) {
+                this.scrollOffset = MathHelper.clamp(
+                        this.selectedIndex,
+                        0,
+                        Math.max(this.suggestions.size() - config.suggestionLineLimit, 0)
+                );
+            } else if (this.selectedIndex > visibleEnd) {
+                this.scrollOffset = MathHelper.clamp(
+                        this.selectedIndex + config.lineStartOffset - config.suggestionLineLimit,
+                        0,
+                        Math.max(this.suggestions.size() - config.suggestionLineLimit, 0)
+                );
             }
         }
 
-        public boolean keyPressed(int pKeyCode)
-        {
-            if (pKeyCode == Keyboard.KEY_UP)
-            {
-                this.cycle(-1);
-                this.tabCycles = false;
-                return true;
-            }
-            else if (pKeyCode == Keyboard.KEY_DOWN)
-            {
-                this.cycle(1);
-                this.tabCycles = false;
-                return true;
-            }
-            else if (pKeyCode == Keyboard.KEY_TAB)
-            {
-                if (this.tabCycles)
-                {
-                    this.cycle(GuiScreen.isShiftKeyDown() ? -1 : 1);
-                }
+        public void select(int index) {
+            this.selectedIndex = ((index % this.suggestions.size()) + this.suggestions.size()) % this.suggestions.size();
 
-                this.useSuggestion();
-                return true;
-            }
-            else if (pKeyCode == Keyboard.KEY_ESCAPE)
-            {
-                this.hide();
-                return true;
-            }
-            else
-            {
-                return false;
-            }
+            Suggestion suggestion = this.suggestions.get(this.selectedIndex);
+            String suffix = calculateSuggestionSuffix(input.getText(), suggestion.apply(this.originalText));
+            ((GuiTextFieldExtras) input).suggestion(suffix);
         }
 
-        public void cycle(int pChange)
-        {
-            this.select(this.current + pChange);
-            int i = this.offset;
-            int j = this.offset + CommandSuggestions.this.suggestionLineLimit - 1;
+        public void applySuggestion() {
+            Suggestion suggestion = this.suggestions.get(this.selectedIndex);
+            keepSuggestions = true;
 
-            if (this.current < i)
-            {
-                this.offset = MathHelper.clamp(this.current, 0, Math.max(this.suggestionList.size() - CommandSuggestions.this.suggestionLineLimit, 0));
-            }
-            else if (this.current > j)
-            {
-                this.offset = MathHelper.clamp(this.current + CommandSuggestions.this.lineStartOffset - CommandSuggestions.this.suggestionLineLimit, 0, Math.max(this.suggestionList.size() - CommandSuggestions.this.suggestionLineLimit, 0));
-            }
-        }
+            String newText = suggestion.apply(this.originalText);
+            input.setText(newText);
 
-        public void select(int pIndex)
-        {
-            this.current = pIndex;
+            int cursorPos = suggestion.getRange().getStart() + suggestion.getText().length();
+            input.setCursorPosition(cursorPos);
+            input.setSelectionPos(cursorPos);
 
-            if (this.current < 0)
-            {
-                this.current += this.suggestionList.size();
-            }
-
-            if (this.current >= this.suggestionList.size())
-            {
-                this.current -= this.suggestionList.size();
-            }
-
-            Suggestion suggestion = this.suggestionList.get(this.current);
-            ((GuiTextFieldExtras) CommandSuggestions.this.input).suggestion(CommandSuggestions.calculateSuggestionSuffix(CommandSuggestions.this.input.getText(), suggestion.apply(this.originalContents)));
-        }
-
-        public void useSuggestion()
-        {
-            Suggestion suggestion = this.suggestionList.get(this.current);
-            CommandSuggestions.this.keepSuggestions = true;
-            CommandSuggestions.this.input.setText(suggestion.apply(this.originalContents));
-            int i = suggestion.getRange().getStart() + suggestion.getText().length();
-            CommandSuggestions.this.input.setCursorPosition(i);
-            CommandSuggestions.this.input.setSelectionPos(i);
-            this.select(this.current);
-            CommandSuggestions.this.keepSuggestions = false;
+            this.select(this.selectedIndex);
+            keepSuggestions = false;
             this.tabCycles = true;
         }
 
-        public void hide()
-        {
-            CommandSuggestions.this.suggestions = null;
+        public void hide() {
+            suggestions.clear();
         }
     }
 }

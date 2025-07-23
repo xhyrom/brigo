@@ -1,7 +1,6 @@
 package dev.xhyrom.brigo;
 
-
-import cpw.mods.fml.common.Mod;
+import net.minecraftforge.fml.common.Mod;
 
 @Mod(modid = BrigoClient.MOD_ID, useMetadata = true, acceptableRemoteVersions = "*")
 public class BrigoClientForge {

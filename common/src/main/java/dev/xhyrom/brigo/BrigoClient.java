@@ -12,6 +12,6 @@ public class BrigoClient {
     public static void init() {
         ArgumentTypes.init();
 
-        Config.INSTANCE.id();
+        LOGGER.info("Brigo initialized.");
     }
 }

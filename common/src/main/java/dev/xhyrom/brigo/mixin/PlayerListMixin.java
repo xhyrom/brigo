@@ -15,10 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class PlayerListMixin {
     @Shadow @Final private MinecraftServer server;
 
-    @Inject(method = "sendPlayerPermissionLevel", at = @At("TAIL"))
+    @Inject(method = "sendPlayerPermissionLevel", at = @At("HEAD"))
     public void sendPlayerPermissionLevel(EntityPlayerMP player, int permLevel, CallbackInfo ci) {
-        System.out.println("Sending permission level " + permLevel + " to player " + player.getName() + ".");
-
         ((CommandHandlerExtras) this.server.getCommandManager()).sendCommands(player);
     }
 }

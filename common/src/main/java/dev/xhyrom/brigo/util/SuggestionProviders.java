@@ -7,7 +7,6 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.xhyrom.brigo.client.ISuggestionProvider;
-import dev.xhyrom.brigo.command.CommandSource;
 import net.minecraft.util.ResourceLocation;
 
 import java.util.Map;
@@ -17,9 +16,8 @@ public class SuggestionProviders {
     private static final Map<ResourceLocation, SuggestionProvider<ISuggestionProvider>> REGISTRY = Maps.newHashMap();
     private static final ResourceLocation ASK_SERVER_ID = new ResourceLocation("minecraft:ask_server");
     public static final SuggestionProvider<ISuggestionProvider> ASK_SERVER;
-    public static final SuggestionProvider<CommandSource> ALL_RECIPES;
-    public static final SuggestionProvider<CommandSource> AVAILABLE_SOUNDS;
 
+    @SuppressWarnings("unchecked")
     public static <S extends ISuggestionProvider> SuggestionProvider<S> register(ResourceLocation resourceLocation, SuggestionProvider<ISuggestionProvider> suggestionProvider) {
         if (REGISTRY.containsKey(resourceLocation)) {
             throw new IllegalArgumentException("A command suggestion provider is already registered with the name " + resourceLocation);
@@ -30,7 +28,7 @@ public class SuggestionProviders {
     }
 
     public static SuggestionProvider<ISuggestionProvider> get(ResourceLocation resourceLocation) {
-        return (SuggestionProvider)REGISTRY.getOrDefault(resourceLocation, ASK_SERVER);
+        return REGISTRY.getOrDefault(resourceLocation, ASK_SERVER);
     }
 
     public static ResourceLocation getId(SuggestionProvider<ISuggestionProvider> suggestionProvider) {
@@ -42,18 +40,16 @@ public class SuggestionProviders {
     }
 
     static {
-        ASK_SERVER = register(ASK_SERVER_ID, (commandContext, suggestionsBuilder) -> ((ISuggestionProvider)commandContext.getSource()).getSuggestionsFromServer(commandContext, suggestionsBuilder));
-        ALL_RECIPES = register(new ResourceLocation("minecraft:all_recipes"), (commandContext, suggestionsBuilder) -> ISuggestionProvider.suggestIterable(((ISuggestionProvider)commandContext.getSource()).getRecipeResourceLocations(), suggestionsBuilder));
-        AVAILABLE_SOUNDS = register(new ResourceLocation("minecraft:available_sounds"), (commandContext, suggestionsBuilder) -> ISuggestionProvider.suggestIterable(((ISuggestionProvider)commandContext.getSource()).getSoundResourceLocations(), suggestionsBuilder));
+        ASK_SERVER = register(ASK_SERVER_ID, (commandContext, suggestionsBuilder) -> commandContext.getSource().getSuggestionsFromServer(commandContext, suggestionsBuilder));
     }
 
     public static class Wrapper implements SuggestionProvider<ISuggestionProvider> {
         private final SuggestionProvider<ISuggestionProvider> provider;
         private final ResourceLocation id;
 
-        public Wrapper(ResourceLocation p_i47984_1, SuggestionProvider<ISuggestionProvider> p_i47984_2) {
-            this.provider = p_i47984_2;
-            this.id = p_i47984_1;
+        public Wrapper(ResourceLocation id, SuggestionProvider<ISuggestionProvider> provider) {
+            this.provider = provider;
+            this.id = id;
         }
 
         public CompletableFuture<Suggestions> getSuggestions(CommandContext<ISuggestionProvider> commandContext, SuggestionsBuilder suggestionsBuilder) throws CommandSyntaxException {

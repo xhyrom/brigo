@@ -29,32 +29,12 @@ public class CommandSource implements ISuggestionProvider {
     }
 
     @Override
-    public Collection<String> getTeamNames() {
-        return this.sender.getServer().getWorld(0).getScoreboard().getTeamNames();
-    }
-
-    @Override
-    public Collection<ResourceLocation> getSoundResourceLocations() {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public Collection<ResourceLocation> getRecipeResourceLocations() {
-        return Collections.emptyList();
-    }
-
-    @Override
     public CompletableFuture<Suggestions> getSuggestionsFromServer(CommandContext<ISuggestionProvider> context, SuggestionsBuilder suggestionsBuilder) {
         return null;
     }
 
     @Override
-    public Collection<Coordinates> getCoordinates(boolean allowFloatCoords) {
-        return Collections.emptyList();
-    }
-
-    @Override
-    public boolean hasPermissionLevel(int i) {
-        return this.sender.canUseCommand(i, "");
+    public CompletableFuture<Suggestions> getSuggestionsFromServer() {
+        return null;
     }
 }

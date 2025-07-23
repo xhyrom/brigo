@@ -4,7 +4,7 @@
     "name": "Brigo",
     "description": "Brings modern Brigadier-style command suggestions and autocomplete to legacy Minecraft versions.",
     "version": "${version}",
-    "mcversion": "1.12.2",
+    "mcversion": "1.12,1.12.1,1.12.2",
 	"url": "https://modrinth.com/mod/brigo",
 	"updateUrl": "",
 	"authorList": [

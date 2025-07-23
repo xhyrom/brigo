@@ -65,8 +65,7 @@ subprojects {
             }
 
             relocate("org.tinylog", "dev.xhyrom.brigo.shadow.tinylog")
-            relocate("com.electronwill.nightconfig", "dev.xhyrom.brigo.shadow.nightconfig")
-            relocate("folk.sisby.kaleido", "dev.xhyrom.brigo.shadow.kaleido")
+            relocate("com.mojang.brigadier", "dev.xhyrom.brigo.shadow.brigadier")
 
             mergeServiceFiles()
         }
@@ -103,7 +102,7 @@ publishMods {
 
     val cfOptions = curseforgeOptions {
         accessToken.set(curseforgeToken)
-        projectId.set("1302894")
+        projectId.set("1312795")
         minecraftVersions.addAll(versions)
     }
 

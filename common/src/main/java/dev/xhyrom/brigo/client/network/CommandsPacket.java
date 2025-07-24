@@ -151,6 +151,7 @@ public class CommandsPacket {
     private static class PacketReader {
         private final PacketBuffer buffer;
         private final List<NodeEntry> entries = Lists.newArrayList();
+        private int rootIndex;
 
         public PacketReader(PacketBuffer buffer) {
             this.buffer = buffer;
@@ -158,6 +159,7 @@ public class CommandsPacket {
 
         public RootCommandNode<ISuggestionProvider> readCommands() {
             return this.readEntries()
+                    .readRootIndex()
                     .resolveNodes()
                     .getRootNode();
         }
@@ -167,6 +169,11 @@ public class CommandsPacket {
             for (int i = 0; i < entryCount; i++) {
                 entries.add(readNodeEntry());
             }
+            return this;
+        }
+
+        private PacketReader readRootIndex() {
+            rootIndex = buffer.readVarInt();
             return this;
         }
 
@@ -183,7 +190,6 @@ public class CommandsPacket {
         }
 
         private RootCommandNode<ISuggestionProvider> getRootNode() {
-            int rootIndex = buffer.readVarInt();
             return (RootCommandNode<ISuggestionProvider>) entries.get(rootIndex).getNode();
         }
 
@@ -249,9 +255,37 @@ public class CommandsPacket {
         boolean tryBuild(List<NodeEntry> allEntries) {
             if (node != null) return true;
 
-            return this.buildNode()
-                    .addChildren(allEntries)
-                    .applyRedirect(allEntries);
+            if (redirectIndex >= 0 && allEntries.get(redirectIndex).node == null) {
+                return false;
+            }
+
+            for (int childIndex : childIndices) {
+                if (allEntries.get(childIndex).node == null) {
+                    return false;
+                }
+            }
+
+            if (redirectIndex >= 0 && builder != null) {
+                builder.redirect(allEntries.get(redirectIndex).node);
+            }
+
+            if (builder == null) {
+                node = new RootCommandNode<>();
+            } else {
+                if ((flags & FLAG_HAS_COMMAND) != 0) {
+                    builder.executes(context -> 0);
+                }
+                node = builder.build();
+            }
+
+            for (int childIndex : childIndices) {
+                CommandNode<ISuggestionProvider> childNode = allEntries.get(childIndex).node;
+                if (!(childNode instanceof RootCommandNode)) {
+                    node.addChild(childNode);
+                }
+            }
+
+            return true;
         }
 
         private NodeEntry buildNode() {
@@ -270,7 +304,8 @@ public class CommandsPacket {
             if (redirectIndex >= 0) {
                 NodeEntry redirectEntry = allEntries.get(redirectIndex);
                 if (redirectEntry.node == null) return false;
-                builder.redirect(redirectEntry.node);
+
+                if (builder != null) builder.redirect(redirectEntry.node);
             }
 
             return true;

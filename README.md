@@ -4,9 +4,11 @@
 
 **Brigo** brings modern Brigadier-style command suggestions and autocomplete to legacy Minecraft versions.
 
+<img src=".github/gallery/command_time.png" align="center" alt="brigo command time">
+
 ## What is brigo?
 
-Brigo is a mod that brings Brigadier-style command suggestions, syntax highlighting, and argument previews to older Minecraft versions.  
+Brigo is a mod that brings Brigadier-style command suggestions, syntax highlighting, and argument previews to older Minecraft versions.
 It works on the **client side** to improve the command UI on most servers, but can also be installed **server-side** to provide deeper integration, such as custom command trees and better suggestion accuracy.
 
 ## How do I use it?

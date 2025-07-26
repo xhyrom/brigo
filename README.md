@@ -4,7 +4,9 @@
 
 **Brigo** brings modern Brigadier-style command suggestions and autocomplete to legacy Minecraft versions.
 
-<img src=".github/gallery/command_time.png" align="center" alt="brigo command time">
+<div align="center">
+  <img src=".github/gallery/command_time.png" alt="brigo command time">
+</div>
 
 ## What is brigo?
 

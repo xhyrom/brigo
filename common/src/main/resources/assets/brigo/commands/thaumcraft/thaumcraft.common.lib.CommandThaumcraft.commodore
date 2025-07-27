@@ -1,0 +1,24 @@
+thaumcraft {
+    help;
+    reload;
+
+    research {
+        list;
+        player brigadier:string single_word {
+            list;
+            all;
+            reset;
+            research brigadier:string single_word;
+        }
+    }
+    warp {
+        player brigadier:string single_word {
+            add {
+                amount brigadier:integer;
+            }
+            set {
+                amount brigadier:integer;
+            }
+        }
+    }
+}

@@ -4,8 +4,7 @@ import com.google.common.collect.Maps;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import dev.xhyrom.brigo.BrigoClient;
 import dev.xhyrom.brigo.command.CommandSource;
-import dev.xhyrom.brigo.compat.mods.BaublesMod;
-import dev.xhyrom.brigo.compat.mods.MinecraftMod;
+import dev.xhyrom.brigo.compat.mods.*;
 import dev.xhyrom.brigo.platform.Services;
 import me.lucko.commodore.file.CommodoreFileReader;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +20,7 @@ public class CompatRegistry {
     public static void init() {
         register("minecraft", MinecraftMod::new);
         register("baubles", BaublesMod::new);
+        register("thaumcraft", ThaumcraftMod::new);
     }
 
     public static boolean hasCompatFor(Class<?> clazz) {

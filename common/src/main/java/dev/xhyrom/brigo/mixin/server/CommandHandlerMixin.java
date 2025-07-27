@@ -6,6 +6,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.mojang.brigadier.tree.RootCommandNode;
 import dev.xhyrom.brigo.accessor.CommandHandlerExtras;
 import dev.xhyrom.brigo.client.ISuggestionProvider;
@@ -36,10 +37,19 @@ public class CommandHandlerMixin implements CommandHandlerExtras {
 
     @Unique
     private void brigo$registerBrigoCommand(ICommand command) {
-        brigo$dispatcher.register(
+        final LiteralCommandNode<CommandSource> node = brigo$dispatcher.register(
                 LiteralArgumentBuilder.<CommandSource>literal(command.getName())
                         .then(brigo$createParameterArgument())
         );
+
+        command.getAliases().forEach(alias -> {
+            if (alias.equals(command.getName())) return;
+
+            brigo$dispatcher.register(
+                LiteralArgumentBuilder.<CommandSource>literal(alias)
+                        .redirect(node)
+            );
+        });
     }
 
     @Unique

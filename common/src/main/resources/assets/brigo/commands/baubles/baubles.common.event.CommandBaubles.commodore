@@ -1,0 +1,11 @@
+baubles {
+    view {
+        player brigadier:string single_word;
+    }
+    clear {
+        player brigadier:string single_word;
+        player brigadier:string single_word {
+            slot brigadier:integer;
+        }
+    }
+}

@@ -1,6 +1,7 @@
 package dev.xhyrom.brigo;
 
 import dev.xhyrom.brigo.command.serialization.ArgumentTypes;
+import dev.xhyrom.brigo.compat.CompatRegistry;
 import org.tinylog.Logger;
 import org.tinylog.TaggedLogger;
 
@@ -11,6 +12,7 @@ public class BrigoClient {
 
     public static void init() {
         ArgumentTypes.init();
+        CompatRegistry.init();
 
         LOGGER.info("Brigo initialized.");
     }

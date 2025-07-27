@@ -13,6 +13,7 @@ import dev.xhyrom.brigo.client.ISuggestionProvider;
 import dev.xhyrom.brigo.command.CommandSource;
 import dev.xhyrom.brigo.command.CommandTreeConverter;
 import dev.xhyrom.brigo.client.network.CommandsPacket;
+import dev.xhyrom.brigo.compat.CompatRegistry;
 import net.minecraft.command.CommandHandler;
 import net.minecraft.command.ICommand;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -37,10 +38,16 @@ public class CommandHandlerMixin implements CommandHandlerExtras {
 
     @Unique
     private void brigo$registerBrigoCommand(ICommand command) {
-        final LiteralCommandNode<CommandSource> node = brigo$dispatcher.register(
-                LiteralArgumentBuilder.<CommandSource>literal(command.getName())
-                        .then(brigo$createParameterArgument())
-        );
+        final LiteralCommandNode<CommandSource> node;
+        if (CompatRegistry.hasCompatFor(command.getClass())) {
+            node = CompatRegistry.getCompatCommand(command.getClass());
+        } else {
+            node = LiteralArgumentBuilder.<CommandSource>literal(command.getName())
+                    .then(brigo$createParameterArgument())
+                    .build();
+        }
+
+        brigo$dispatcher.getRoot().addChild(node);
 
         command.getAliases().forEach(alias -> {
             if (alias.equals(command.getName())) return;

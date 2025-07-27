@@ -36,6 +36,9 @@ dependencies {
     implementation("com.mojang:brigadier:1.0.18")
     shadowBundle("com.mojang:brigadier:1.0.18")
 
+    implementation("me.lucko:commodore-file:1.0")
+    shadowBundle("me.lucko:commodore-file:1.0")
+
     compileOnly("org.spongepowered:mixin:0.7.11-SNAPSHOT")
 }
 

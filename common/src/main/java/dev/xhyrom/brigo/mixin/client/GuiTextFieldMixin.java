@@ -85,7 +85,7 @@ public abstract class GuiTextFieldMixin implements GuiTextFieldExtras {
         if (!visibleText.isEmpty()) {
             String textBeforeCursor = shouldShowCursor ? visibleText.substring(0, cursorPos) : visibleText;
             renderX = this.fontRenderer.drawStringWithShadow(
-                    this.brigo$textFormatter.apply(textBeforeCursor, this.cursorPosition),
+                    this.brigo$textFormatter.apply(textBeforeCursor, this.lineScrollOffset),
                     (float) textX,
                     (float) textY,
                     textColor
@@ -98,7 +98,7 @@ public abstract class GuiTextFieldMixin implements GuiTextFieldExtras {
 
         if (!visibleText.isEmpty() && shouldShowCursor && cursorPos < visibleText.length()) {
             this.fontRenderer.drawStringWithShadow(
-                    this.brigo$textFormatter.apply(visibleText.substring(cursorPos), this.cursorPosition),
+                    this.brigo$textFormatter.apply(visibleText.substring(cursorPos), this.lineScrollOffset),
                     (float) renderX,
                     (float) textY,
                     textColor

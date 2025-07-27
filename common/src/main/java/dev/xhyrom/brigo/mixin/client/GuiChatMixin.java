@@ -60,9 +60,11 @@ public class GuiChatMixin extends GuiScreen {
         this.brigo$commandSuggestions.updateCommandInfo();
     }
 
-    @Inject(method = "handleMouseInput", at = @At("HEAD"))
+    @Inject(method = "handleMouseInput", at = @At("HEAD"), cancellable = true)
     private void onHandleMouseInput(CallbackInfo ci) {
-        this.brigo$commandSuggestions.handleMouseScroll(Mouse.getEventDWheel());
+        if (this.brigo$commandSuggestions.handleMouseScroll(Mouse.getEventDWheel())) {
+            ci.cancel();
+        }
     }
 
     @Inject(method = "mouseClicked", at = @At("HEAD"), cancellable = true)

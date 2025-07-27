@@ -1,5 +1,7 @@
 time {
     set {
+        day;
+        night;
         time brigadier:integer;
     }
     add {

@@ -5,6 +5,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import dev.xhyrom.brigo.BrigoClient;
 import dev.xhyrom.brigo.command.CommandSource;
 import dev.xhyrom.brigo.compat.mods.BaublesMod;
+import dev.xhyrom.brigo.compat.mods.MinecraftMod;
 import dev.xhyrom.brigo.platform.Services;
 import me.lucko.commodore.file.CommodoreFileReader;
 import org.jetbrains.annotations.NotNull;
@@ -18,6 +19,7 @@ public class CompatRegistry {
     private static final Map<String, LiteralCommandNode<CommandSource>> REGISTERED_COMMANDS = Maps.newHashMap();
 
     public static void init() {
+        register("minecraft", MinecraftMod::new);
         register("baubles", BaublesMod::new);
     }
 
@@ -33,13 +35,15 @@ public class CompatRegistry {
         return CompatRegistry.class.getResourceAsStream("/assets/brigo/commands/" + path);
     }
 
-    private static void register(final String modId, final @NotNull Supplier<CompatMod> lazyMod) {
+    private static void register(final @NotNull String modId, final @NotNull Supplier<CompatMod> lazyMod) {
         if (!Services.AGNOS.isModLoaded(modId)) return;
 
         BrigoClient.LOGGER.info("Loading compatibility for mod: {}", modId);
 
         CompatMod mod = lazyMod.get();
         mod.commands().forEach(clazz -> {
+            BrigoClient.LOGGER.info("Registering compatibility command: {}", clazz);
+
             try {
                 REGISTERED_COMMANDS.put(clazz, CommodoreFileReader.INSTANCE.parse(getResource(mod.identifier() + "/" + clazz + ".commodore")));
                 BrigoClient.LOGGER.info("Registered compatibility command: {}", clazz);

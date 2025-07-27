@@ -288,46 +288,6 @@ public class CommandsPacket {
             return true;
         }
 
-        private NodeEntry buildNode() {
-            if (builder == null) {
-                node = new RootCommandNode<>();
-            } else {
-                if ((flags & FLAG_HAS_COMMAND) != 0) {
-                    builder.executes(context -> 0);
-                }
-                node = builder.build();
-            }
-            return this;
-        }
-
-        private boolean applyRedirect(List<NodeEntry> allEntries) {
-            if (redirectIndex >= 0) {
-                NodeEntry redirectEntry = allEntries.get(redirectIndex);
-                if (redirectEntry.node == null) return false;
-
-                if (builder != null) builder.redirect(redirectEntry.node);
-            }
-
-            return true;
-        }
-
-        private NodeEntry addChildren(List<NodeEntry> allEntries) {
-            for (int childIndex : childIndices) {
-                if (allEntries.get(childIndex).node == null) {
-                    return this;
-                }
-            }
-
-            for (int childIndex : childIndices) {
-                CommandNode<ISuggestionProvider> childNode = allEntries.get(childIndex).node;
-                if (!(childNode instanceof RootCommandNode)) {
-                    node.addChild(childNode);
-                }
-            }
-
-            return this;
-        }
-
         CommandNode<ISuggestionProvider> getNode() {
             return node;
         }

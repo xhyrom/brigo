@@ -1,0 +1,6 @@
+defaultgamemode {
+    survival;
+    creative;
+    adventure;
+    spectator;
+}

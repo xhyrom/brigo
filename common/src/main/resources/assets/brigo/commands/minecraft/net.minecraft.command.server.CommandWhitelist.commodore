@@ -1,0 +1,12 @@
+whitelist {
+    on;
+    off;
+    list;
+    add {
+        player brigadier:string single_word;
+    }
+    remove {
+        player brigadier:string single_word;
+    }
+    reload;
+}

@@ -1,0 +1,44 @@
+advancement {
+    grant {
+        player brigadier:string single_word {
+            everything;
+            only {
+                advancement brigadier:string greedy_phrase;
+            }
+            until {
+                advancement brigadier:string greedy_phrase;
+            }
+            from {
+                advancement brigadier:string greedy_phrase;
+            }
+            through {
+                advancement brigadier:string greedy_phrase;
+            }
+        }
+    }
+    revoke {
+        player brigadier:string single_word {
+            everything;
+            only {
+                advancement brigadier:string greedy_phrase;
+            }
+            until {
+                advancement brigadier:string greedy_phrase;
+            }
+            from {
+                advancement brigadier:string greedy_phrase;
+            }
+            through {
+                advancement brigadier:string greedy_phrase;
+            }
+        }
+    }
+    test {
+        player brigadier:string single_word {
+            advancement brigadier:string greedy_phrase;
+            advancement brigadier:string greedy_phrase {
+                criterion brigadier:string single_word;
+            }
+        }
+    }
+}

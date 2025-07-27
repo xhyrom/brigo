@@ -1,9 +1,8 @@
 package dev.xhyrom.brigo.command.serialization;
 
 import com.google.common.collect.Maps;
-import com.mojang.brigadier.arguments.ArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
-import dev.xhyrom.brigo.command.serialization.serializers.StringArgumentSerializer;
+import com.mojang.brigadier.arguments.*;
+import dev.xhyrom.brigo.command.serialization.serializers.*;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +33,11 @@ public class ArgumentTypes {
     }
 
     public static void init() {
+        register("brigadier:bool", BoolArgumentType.class, new EmptyArgumentSerializer<>(BoolArgumentType::bool));
+        register("brigadier:float", FloatArgumentType.class, new FloatArgumentSerializer());
+        register("brigadier:double", DoubleArgumentType.class, new DoubleArgumentSerializer());
+        register("brigadier:integer", IntegerArgumentType.class, new IntegerArgumentSerializer());
+        register("brigadier:long", LongArgumentType.class, new LongArgumentSerializer());
         register("brigadier:string", StringArgumentType.class, new StringArgumentSerializer());
     }
 

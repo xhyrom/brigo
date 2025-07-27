@@ -63,6 +63,8 @@ public class CommandTreeConverter {
     private void configureArgumentBuilder(RequiredArgumentBuilder<ISuggestionProvider, ?> builder) {
         if (builder.getSuggestionsProvider() != null) {
             builder.suggests(SuggestionProviders.safelySwap(builder.getSuggestionsProvider()));
+        } else {
+            builder.suggests(SuggestionProviders.ASK_SERVER);
         }
     }
 }

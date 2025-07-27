@@ -1,0 +1,6 @@
+gamerule {
+    rule brigadier:string single_word;
+    rule brigadier:string single_word {
+        value brigadier:string single_word;
+    }
+}

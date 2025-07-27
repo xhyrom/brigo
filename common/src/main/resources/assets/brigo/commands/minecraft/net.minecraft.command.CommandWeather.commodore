@@ -1,0 +1,14 @@
+weather {
+    clear;
+    clear {
+        duration brigadier:integer;
+    }
+    rain;
+    rain {
+        duration brigadier:integer;
+    }
+    thunder;
+    thunder {
+        duration brigadier:integer;
+    }
+}

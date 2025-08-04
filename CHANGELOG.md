@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.1.1
+
+- Fixed history scrolling to skip commands when no suggestions are shown
+
 ## 1.1.0
 
 - Added mod compatibility system with predefined command definitions for Minecraft, Baubles, and Thaumcraft

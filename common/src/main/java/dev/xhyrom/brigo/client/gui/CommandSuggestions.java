@@ -125,8 +125,11 @@ public class CommandSuggestions {
     public void showSuggestions() {
         if (this.pendingSuggestions != null && this.pendingSuggestions.isDone()) {
             Suggestions suggestions = this.pendingSuggestions.join();
+            if (suggestions.isEmpty()) return;
 
-            if (!suggestions.isEmpty()) {
+            List<Suggestion> filteredSuggestions = sortSuggestions(suggestions);
+
+            if (!filteredSuggestions.isEmpty()) {
                 int maxWidth = suggestions.getList().stream()
                         .mapToInt(suggestion -> this.fontRenderer.getStringWidth(suggestion.getText()))
                         .max()
@@ -138,7 +141,7 @@ public class CommandSuggestions {
                 );
 
                 int y = this.config.anchorToBottom ? this.screen.height - 12 : 72;
-                this.suggestions = new SuggestionsList(x, y, maxWidth, sortSuggestions(suggestions));
+                this.suggestions = new SuggestionsList(x, y, maxWidth, filteredSuggestions);
             }
         }
     }
@@ -153,6 +156,8 @@ public class CommandSuggestions {
 
         for (Suggestion suggestion : suggestions.getList()) {
             String text = suggestion.getText();
+            if (text.equals(currentWord)) continue;
+
             if (text.startsWith(currentWord) || text.startsWith("minecraft:" + currentWord)) {
                 prioritySuggestions.add(suggestion);
             } else {

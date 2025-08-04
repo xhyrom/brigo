@@ -94,19 +94,18 @@ public class CommandSuggestions {
         }
     }
 
-    public CommandSuggestions allowSuggestions(boolean allow) {
+    public void allowSuggestions(boolean allow) {
         this.allowSuggestions = allow;
         if (!allow) {
             this.suggestions = null;
         }
-        return this;
     }
 
     public boolean handleKeyPress(int keyCode) {
         if (this.suggestions != null && this.suggestions.handleKeyPress(keyCode)) {
             return true;
         } else if (keyCode == Keyboard.KEY_TAB) {
-            this.showSuggestions(true);
+            this.showSuggestions();
             return true;
         }
 
@@ -123,7 +122,7 @@ public class CommandSuggestions {
                 this.suggestions.handleMouseClick((int)mouseX, (int)mouseY, button);
     }
 
-    public void showSuggestions(boolean narrateFirst) {
+    public void showSuggestions() {
         if (this.pendingSuggestions != null && this.pendingSuggestions.isDone()) {
             Suggestions suggestions = this.pendingSuggestions.join();
 
@@ -255,8 +254,9 @@ public class CommandSuggestions {
         }
 
         this.suggestions = null;
+
         if (this.allowSuggestions) {
-            this.showSuggestions(false);
+            this.showSuggestions();
         }
     }
 
@@ -572,11 +572,12 @@ public class CommandSuggestions {
                     if (this.tabCycles) {
                         this.cycle(GuiScreen.isShiftKeyDown() ? -1 : 1);
                     }
+
                     this.applySuggestion();
                     return true;
                 case Keyboard.KEY_ESCAPE:
                     this.hide();
-                    return false;
+                    return true;
                 default:
                     return false;
             }
@@ -632,6 +633,7 @@ public class CommandSuggestions {
 
         public void hide() {
             suggestions.clear();
+            CommandSuggestions.this.suggestions = null;
         }
     }
 }
